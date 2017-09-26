@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -23,7 +22,6 @@ using Sparrow.Json.Parsing;
 using Sparrow.Logging;
 using Raven.Server.NotificationCenter.Notifications;
 using Raven.Server.NotificationCenter.Notifications.Details;
-using Raven.Server.ServerWide.Commands;
 using Raven.Server.Utils;
 using Sparrow;
 using Sparrow.Threading;

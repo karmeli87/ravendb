@@ -16,7 +16,6 @@ using Raven.Server.Documents.TcpHandlers;
 using Raven.Server.Json;
 using Raven.Server.NotificationCenter.Notifications;
 using Raven.Server.ServerWide;
-using Raven.Server.ServerWide.Commands;
 using Raven.Server.ServerWide.Context;
 using Sparrow.Collections;
 using Sparrow.Json;
@@ -528,9 +527,12 @@ namespace Raven.Server.Documents.Replication
                         outgoingReplication.ConnectionInfo = cmd.Result;
                     }
                 }
-                catch
+                catch (Exception e)
                 {
                     // will try to fetch it again later
+                    if (_log.IsInfoEnabled)
+                        _log.Info($"External replication failed to fetch connection information for database '{node.Database}', the connection will be retried later.", e);
+
                     _reconnectQueue.TryAdd(new ConnectionShutdownInfo
                     {
                         Node = node,

@@ -672,7 +672,7 @@ namespace RachisTests.DatabaseCluster
             }
         }
 
-        [Fact]
+        [NightlyBuildFact]
         public async Task ExternalReplicationFailover()
         {
             var clusterSize = 3;
@@ -707,7 +707,7 @@ namespace RachisTests.DatabaseCluster
             {
                 Database = dstDB
             };
-            await AddWatcherToReplicationTopology((DocumentStore)srcStore, watcher);
+            var res = await AddWatcherToReplicationTopology((DocumentStore)srcStore, watcher);
 
             var dstStore = new DocumentStore
             {
@@ -724,9 +724,13 @@ namespace RachisTests.DatabaseCluster
                 TimeSpan.FromSeconds(60)));
 
 
-            Assert.True(WaitForValue(() => OngoingTasksHandler.GetOngoingTasksFor(srcDB, srcLeader.ServerStore).OngoingTasksList.Single(t => t is OngoingTaskReplication).As<OngoingTaskReplication>().DestinationUrl != null, true));
 
-            var watcherTaskUrl = OngoingTasksHandler.GetOngoingTasksFor(srcDB, srcLeader.ServerStore).OngoingTasksList.Single(t => t is OngoingTaskReplication).As<OngoingTaskReplication>().DestinationUrl;
+            var responsibale = srcLeader.ServerStore.GetClusterTopology().GetUrlFromTag(res.ResponsibleNode);
+            var server = Servers.Single(s => s.WebUrl == responsibale);
+
+            Assert.True(WaitForValue(() => OngoingTasksHandler.GetOngoingTasksFor(srcDB, server.ServerStore).OngoingTasksList.Single(t => t is OngoingTaskReplication).As<OngoingTaskReplication>().DestinationUrl != null, true));
+
+            var watcherTaskUrl = OngoingTasksHandler.GetOngoingTasksFor(srcDB, server.ServerStore).OngoingTasksList.Single(t => t is OngoingTaskReplication).As<OngoingTaskReplication>().DestinationUrl;
 
             // fail the node to to where the data is sent
             DisposeServerAndWaitForFinishOfDisposal(Servers.Single(s=>s.WebUrl == watcherTaskUrl));
@@ -741,9 +745,8 @@ namespace RachisTests.DatabaseCluster
                     u => u.Name.Equals("Karmel2"),
                     TimeSpan.FromSeconds(clusterSize + 5)));
             }
-            WaitForUserToContinueTheTest(srcStore as DocumentStore);
 
-            Assert.True(WaitForDocument(dstStore, "users/2"));
+            Assert.True(WaitForDocument(dstStore, "users/2",30_000));
 
             srcStore.Dispose();
             dstSession.Dispose();
