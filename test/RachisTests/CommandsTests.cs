@@ -71,7 +71,7 @@ namespace RachisTests
                     Assert.True(false, "We should have gotten an error");
                 }
                 // expecting either one of those
-                catch (TimeoutException)
+                catch (Exception e) when (e.InnerException is TimeoutException)
                 {
                 }
                 catch (NotLeadingException)

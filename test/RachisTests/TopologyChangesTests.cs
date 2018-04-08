@@ -16,8 +16,8 @@ namespace RachisTests
         {
             var leader = await CreateNetworkAndGetLeader(3);
             var followers = GetFollowers();
-            DisconnectFromNode(leader);
             var newServer = SetupServer();
+            DisconnectFromNode(leader);
             await leader.AddToClusterAsync(newServer.Url);
             await newServer.WaitForTopology(Leader.TopologyModification.Promotable);
             var newLeader = WaitForAnyToBecomeLeader(followers);

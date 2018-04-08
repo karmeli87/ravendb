@@ -19,7 +19,7 @@ namespace Sparrow.Utils
 
         private class TimerTaskHolder  : IDisposable
         {
-            private TaskCompletionSource<object> _nextTimeout;
+            private volatile TaskCompletionSource<object> _nextTimeout;
             private readonly Timer _timer;
 
             public void TimerCallback(object state)

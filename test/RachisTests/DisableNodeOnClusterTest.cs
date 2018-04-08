@@ -18,12 +18,13 @@ namespace RachisTests
         [NightlyBuildFact]
         public async Task BackToFirstNodeAfterRevive()
         {
+            var db = "BackToFirstNodeAfterRevive";
             var leader = await CreateRaftClusterAndGetLeader(3, shouldRunInMemory: false);
-            await CreateDatabaseInCluster("MainDB", 3, leader.WebUrl);
+            await CreateDatabaseInCluster(db, 3, leader.WebUrl);
 
             using (var leaderStore = new DocumentStore
             {
-                Database = "MainDB",
+                Database = db,
                 Urls = new[] { leader.WebUrl }
             }.Initialize())
             {
@@ -44,7 +45,7 @@ namespace RachisTests
                 var firstNode = Servers.Single(s => s.WebUrl == firstNodeUrl);
                 var nodePath = firstNode.Configuration.Core.DataDirectory;
 
-                firstNode.Dispose();
+                await DisposeServerAndWaitForFinishOfDisposalAsync(firstNode);
 
                 // check that replication works.
                 using (var session = leaderStore.OpenSession())
