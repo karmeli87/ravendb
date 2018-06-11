@@ -159,7 +159,12 @@ namespace Raven.Server.Rachis
 
                             foreach (var candidateAmbassador in _voters)
                             {
-                                connections[candidateAmbassador.Tag] = candidateAmbassador.Connection;
+                                var reusedConneciton = candidateAmbassador.PublishedConnection;
+                                if (reusedConneciton != null)
+                                {
+                                    // reuse the connection
+                                    connections[candidateAmbassador.Tag] = reusedConneciton;
+                                }
                                 if (candidateAmbassador.ClusterCommandsVersion > 0)
                                 {
                                     versions.Add(candidateAmbassador.ClusterCommandsVersion);

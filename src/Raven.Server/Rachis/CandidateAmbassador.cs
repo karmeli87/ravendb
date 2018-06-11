@@ -40,7 +40,8 @@ namespace Raven.Server.Rachis
         public volatile int ClusterCommandsVersion; // default is 0
         public string Tag => _tag;
 
-        public RemoteConnection Connection;
+        private RemoteConnection _connection;
+        public RemoteConnection PublishedConnection;
 
         public CandidateAmbassador(RachisConsensus engine, Candidate candidate, string tag, string url, X509Certificate2 certificate)
         {
@@ -89,7 +90,7 @@ namespace Raven.Server.Rachis
         {
             if (_candidate.ElectionResult != ElectionResult.Won)
             {
-                Volatile.Read(ref Connection)?.Dispose();
+                Volatile.Read(ref _connection)?.Dispose();
             }
         }
 
@@ -136,8 +137,9 @@ namespace Raven.Server.Rachis
                         StatusMessage = $"Connected to {_tag}";
 
                         Stopwatch sp;
-                        var connection = new RemoteConnection(_tag, _engine.Tag, _candidate.ElectionTerm, stream, disconnect);
-                        Interlocked.Exchange(ref Connection, connection); //publish the new connection
+                        _connection?.Dispose();
+                        _connection = new RemoteConnection(_tag, _engine.Tag, _candidate.ElectionTerm, stream, disconnect);
+
                         using (_engine.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
                         {
                             ClusterTopology topology;
@@ -151,7 +153,7 @@ namespace Raven.Server.Rachis
                             }
 
                             Debug.Assert(topology.TopologyId != null);
-                            connection.Send(context, new RachisHello
+                            _connection.Send(context, new RachisHello
                             {
                                 TopologyId = topology.TopologyId,
                                 DebugSourceIdentifier = _engine.Tag,
@@ -166,12 +168,16 @@ namespace Raven.Server.Rachis
                             while (_candidate.Running)
                             {
                                 RequestVoteResponse rvr;
+                                
+                                // clear the current published connection
+                                Interlocked.Exchange(ref PublishedConnection, null)?.Dispose();
+
                                 currentElectionTerm = _candidate.ElectionTerm;
                                 if (_candidate.IsForcedElection == false &&
                                     _candidate.RunRealElectionAtTerm != currentElectionTerm)
                                 {
                                     sp = Stopwatch.StartNew();
-                                    connection.Send(context, new RequestVote
+                                    _connection.Send(context, new RequestVote
                                     {
                                         Source = _engine.Tag,
                                         Term = currentElectionTerm,
@@ -181,7 +187,7 @@ namespace Raven.Server.Rachis
                                         LastLogTerm = lastLogTerm
                                     });
 
-                                    rvr = connection.Read<RequestVoteResponse>(context);
+                                    rvr = _connection.Read<RequestVoteResponse>(context);
 
                                     ClusterCommandsVersion = rvr.ClusterCommandsVersion ?? 400;
 
@@ -232,7 +238,7 @@ namespace Raven.Server.Rachis
                                 }
 
                                 sp = Stopwatch.StartNew();
-                                connection.Send(context, new RequestVote
+                                _connection.Send(context, new RequestVote
                                 {
                                     Source = _engine.Tag,
                                     Term = currentElectionTerm,
@@ -242,7 +248,7 @@ namespace Raven.Server.Rachis
                                     LastLogTerm = lastLogTerm
                                 });
 
-                                rvr = connection.Read<RequestVoteResponse>(context);
+                                rvr = _connection.Read<RequestVoteResponse>(context);
                                 ClusterCommandsVersion = rvr.ClusterCommandsVersion ?? 400;
 
                                 if (_engine.Log.IsInfoEnabled)
@@ -286,23 +292,25 @@ namespace Raven.Server.Rachis
                                 }
 
                                 RealElectionWonAtTerm = rvr.Term;
+                                
+                                // only here we can safely publish the connection
+                                Interlocked.Exchange(ref PublishedConnection, _connection);
+
                                 _candidate.WaitForChangeInState();
-
                             }
-
-                            SendElectionResult(currentElectionTerm);
+                            SendElectionResult(_connection, currentElectionTerm);
                         }
                     }
                     catch (AggregateException ae)
                         when (ae.InnerException is OperationCanceledException || ae.InnerException is LockAlreadyDisposedException)
                     {
-                        NotifyAboutAmbassadorClosing(ae.InnerException, currentElectionTerm);
+                        NotifyAboutAmbassadorClosing(_connection, currentElectionTerm, ae.InnerException);
                         break;
                     }
                     catch (Exception e)
                         when (e is OperationCanceledException || e is LockAlreadyDisposedException)
                     {
-                        NotifyAboutAmbassadorClosing(e, currentElectionTerm);
+                        NotifyAboutAmbassadorClosing(_connection, currentElectionTerm, e);
                         break;
                     }
                     catch (Exception e)
@@ -314,7 +322,7 @@ namespace Raven.Server.Rachis
                             _engine.Log.Info($"CandidateAmbassador for {_tag}: Failed to get vote from remote peer url={_url} tag={_tag}", e);
                         }
 
-                        Connection?.Dispose();
+                        _connection?.Dispose();
                         _candidate.WaitForChangeInState();
                     }
                 }
@@ -332,20 +340,20 @@ namespace Raven.Server.Rachis
             {
                 if (_candidate.ElectionResult != ElectionResult.Won)
                 {
-                    Connection?.Dispose();
+                    _connection?.Dispose();
                 }
             }
         }
 
-        private void NotifyAboutAmbassadorClosing(Exception e, long currentElectionTerm)
+        private void NotifyAboutAmbassadorClosing(RemoteConnection connection, long currentElectionTerm, Exception e)
         {
             Status = AmbassadorStatus.Closed;
             StatusMessage = "Closed";
             if (e is OperationCanceledException)
-                SendElectionResult(currentElectionTerm);
+                SendElectionResult(connection, currentElectionTerm);
         }
 
-        private void SendElectionResult(long currentElectionTerm)
+        private void SendElectionResult(RemoteConnection connection, long currentElectionTerm)
         {
             using (_engine.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
             {
@@ -354,7 +362,7 @@ namespace Raven.Server.Rachis
                     _engine.Log.Info($"CandidateAmbassador for {_tag}: Send election result " +
                                      $"'{_candidate.ElectionResult}' at term {RealElectionWonAtTerm:#,#;;0}");
                 }
-                Connection.Send(context, new RequestVote
+                connection.Send(context, new RequestVote
                 {
                     Source = _engine.Tag,
                     Term = currentElectionTerm,
