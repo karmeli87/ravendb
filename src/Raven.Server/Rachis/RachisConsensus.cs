@@ -799,10 +799,10 @@ namespace Raven.Server.Rachis
                     {
                         if (Log.IsInfoEnabled)
                         {
-                            Log.Info("We are not a part of the cluster so moving to passive");
+                            Log.Info($"{reason}, but we are not a part of the cluster so moving to passive");
                         }
 
-                        SetNewStateInTx(context, RachisState.Passive, null, currentTerm, "We are not a part of the cluster so moving to passive" );
+                        SetNewStateInTx(context, RachisState.Passive, null, currentTerm, $"{reason}, but we are not a part of the cluster so moving to passive" );
                         ctx.Commit();
                         return;
                     }

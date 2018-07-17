@@ -1618,7 +1618,7 @@ namespace Raven.Server.ServerWide
             }
 
             // reload license can send a notification which will open a write tx
-            serverStore.LicenseManager.ReloadLicense();
+            TaskExecutor.Execute(_ => serverStore.LicenseManager.ReloadLicense(), null);
             AsyncHelpers.RunSync(() => serverStore.LicenseManager.CalculateLicenseLimits());
 
             _rachisLogIndexNotifications.NotifyListenersAbout(lastIncludedIndex, null);
