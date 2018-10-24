@@ -50,7 +50,8 @@ namespace Raven.Server.Documents.Replication
 
         private IncomingReplicationStatsAggregator _lastStats;
 
-        public IncomingReplicationHandler(TcpConnectionOptions options,
+        public IncomingReplicationHandler(
+            TcpConnectionOptions options,
             ReplicationLatestEtagRequest replicatedLastEtag,
             ReplicationLoader parent,
             JsonOperationContext.ManagedPinnedBuffer bufferToCopy)
@@ -61,7 +62,7 @@ namespace Raven.Server.Documents.Replication
             _database = options.DocumentDatabase;
             _tcpClient = options.TcpClient;
             _stream = options.Stream;
-            SupportedFeatures = TcpConnectionHeaderMessage.GetSupportedFeaturesFor(TcpConnectionHeaderMessage.OperationTypes.Replication, options.ProtocolVersion);
+            SupportedFeatures = TcpConnectionHeaderMessage.GetSupportedFeaturesFor(options.Operation, options.ProtocolVersion);
             ConnectionInfo.RemoteIp = ((IPEndPoint)_tcpClient.Client.RemoteEndPoint).Address.ToString();
             _parent = parent;
 
@@ -121,22 +122,24 @@ namespace Raven.Server.Documents.Replication
                 if (_incomingWork != null)
                     return; // already set by someone else, they can start it
 
-                _incomingWork = PoolOfThreads.GlobalRavenThreadPool.LongRunning(x =>
-                {
-                    try
-                    {
-                        ReceiveReplicationBatches();
-                    }
-                    catch (Exception e)
-                    {
-                        if (_log.IsInfoEnabled)
-                            _log.Info($"Error in accepting replication request ({FromToString})", e);
-                    }
-                }, null, IncomingReplicationThreadName);
+                _incomingWork = PoolOfThreads.GlobalRavenThreadPool.LongRunning(x => { DoIncomingReplication(); }, null, IncomingReplicationThreadName);
             }
 
             if (_log.IsInfoEnabled)
                 _log.Info($"Incoming replication thread started ({FromToString})");
+        }
+
+        public void DoIncomingReplication()
+        {
+            try
+            {
+                ReceiveReplicationBatches();
+            }
+            catch (Exception e)
+            {
+                if (_log.IsInfoEnabled)
+                    _log.Info($"Error in accepting replication request ({FromToString})", e);
+            }
         }
 
         [ThreadStatic]

@@ -16,6 +16,8 @@ namespace Raven.Client.ServerWide.Operations.Certificates
         public string CollectionPrimaryKey = string.Empty;
         public List<string> CollectionSecondaryKeys = new List<string>();
 
+        public string Settings; // this is a generic settings, which must be as a JSON formatted string.
+
         public DynamicJsonValue ToJson()
         {
             var permissions = new DynamicJsonValue();
@@ -33,7 +35,8 @@ namespace Raven.Client.ServerWide.Operations.Certificates
                 [nameof(SecurityClearance)] = SecurityClearance,
                 [nameof(Permissions)] = permissions,
                 [nameof(CollectionPrimaryKey)] = CollectionPrimaryKey,
-                [nameof(CollectionSecondaryKeys)] = CollectionSecondaryKeys
+                [nameof(CollectionSecondaryKeys)] = CollectionSecondaryKeys,
+                [nameof(Settings)] = Settings
             };
         }
     }
@@ -41,7 +44,8 @@ namespace Raven.Client.ServerWide.Operations.Certificates
     public enum DatabaseAccess
     {
         ReadWrite,
-        Admin
+        Admin,
+        Limited // Pull replication only, at this point, which means that we accept the TCP connection and then validate which pull replication it has access to later
     }
 
     public enum SecurityClearance

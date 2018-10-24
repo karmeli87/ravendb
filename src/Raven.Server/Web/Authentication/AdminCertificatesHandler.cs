@@ -995,7 +995,7 @@ namespace Raven.Server.Web.Authentication
                 if (ResourceNameValidator.IsValidResourceName(kvp.Key, serverStore.Configuration.Core.DataDirectory.FullPath, out var errorMessage) == false)
                     throw new ArgumentException("Error in permissions in the certificate definition:" + errorMessage);
 
-                if (kvp.Value != DatabaseAccess.ReadWrite && kvp.Value != DatabaseAccess.Admin)
+                if (kvp.Value != DatabaseAccess.ReadWrite && kvp.Value != DatabaseAccess.Admin && kvp.Value != DatabaseAccess.Limited)
                     throw new ArgumentException($"Error in permissions in the certificate definition, invalid access {kvp.Value} for database {kvp.Key}");
             }
         }

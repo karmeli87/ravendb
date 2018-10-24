@@ -1491,7 +1491,7 @@ namespace Raven.Server
                     break;
                 case TcpConnectionHeaderMessage.OperationTypes.Replication:
                     var documentReplicationLoader = tcp.DocumentDatabase.ReplicationLoader;
-                    documentReplicationLoader.AcceptIncomingConnection(tcp, bufferToCopy);
+                    documentReplicationLoader.AcceptIncomingConnection(tcp, header.Operation, bufferToCopy);
                     break;
                 default:
                     throw new InvalidOperationException("Unknown operation for TCP " + header.Operation);

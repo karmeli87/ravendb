@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Raven.Client;
 using Raven.Client.Documents;
+using Raven.Client.Documents.Conventions;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Operations.Backups;
@@ -554,9 +555,14 @@ namespace FastTests
 
             using (var store = GetDocumentStore(new Options
             {
+                CreateDatabase = false,
                 Server = server,
                 ClientCertificate = serverCertificate,
-                AdminCertificate = serverCertificate
+                AdminCertificate = serverCertificate,
+                ModifyDocumentStore = s=>s.Conventions = new DocumentConventions
+                {
+                    DisableTopologyUpdates = true
+                }
             }))
             {
                 var requestExecutor = store.GetRequestExecutor();

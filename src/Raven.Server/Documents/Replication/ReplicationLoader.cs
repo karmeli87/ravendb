@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Raven.Client;
@@ -161,17 +162,20 @@ namespace Raven.Server.Documents.Replication
             return null;
         }
 
-        public void AcceptIncomingConnection(TcpConnectionOptions tcpConnectionOptions, JsonOperationContext.ManagedPinnedBuffer buffer)
+        public void AcceptIncomingConnection(TcpConnectionOptions tcpConnectionOptions, 
+            TcpConnectionHeaderMessage.OperationTypes headerOperation,
+            JsonOperationContext.ManagedPinnedBuffer buffer)
         {
             var supportedVersions =
                 TcpConnectionHeaderMessage.GetSupportedFeaturesFor(TcpConnectionHeaderMessage.OperationTypes.Replication, tcpConnectionOptions.ProtocolVersion);
+
             if (supportedVersions.Replication.CanPull)
             {
                 // wait for replication type
                 using (tcpConnectionOptions.ContextPool.AllocateOperationContext(out JsonOperationContext context))
                 using (var readerObject = context.ParseToMemory(
                     tcpConnectionOptions.Stream,
-                    "IncomingReplication/get-last-etag-message read",
+                    "initial-replication-message",
                     BlittableJsonDocumentBuilder.UsageMode.None,
                     buffer))
                 {
@@ -197,18 +201,27 @@ namespace Raven.Server.Documents.Replication
             CreateIncomingInstance(tcpConnectionOptions, buffer);
         }
 
+        public void RunPullReplication(TcpConnectionOptions tcpConnectionOptions, JsonOperationContext.ManagedPinnedBuffer buffer, ReplicationNode destination)
+        {
+            var newIncoming = CreateIncomingReplicationHandler(tcpConnectionOptions, buffer);
+            //TODO: Incoming need to add, known new value
+            IncomingReplicationAdded?.Invoke(newIncoming);
+            newIncoming.Failed += RetryPullReplication;
+
+            // Update current thread name
+            newIncoming.DoIncomingReplication();
+
+            void RetryPullReplication(IncomingReplicationHandler incomingReplicationHandler, Exception exception)
+            {
+                // if the stream closed, it is our duty to reconnect
+                incomingReplicationHandler.Failed -= RetryPullReplication;
+                AddAndStartOutgoingReplication(destination, true);
+            }
+        }
+
         public IncomingReplicationHandler CreateIncomingInstance(TcpConnectionOptions tcpConnectionOptions, JsonOperationContext.ManagedPinnedBuffer buffer)
         {
-            var getLatestEtagMessage = IncomingInitialHandshake(tcpConnectionOptions, buffer);
-
-            var newIncoming = new IncomingReplicationHandler(
-                tcpConnectionOptions,
-                getLatestEtagMessage,
-                this,
-                buffer);
-
-            newIncoming.Failed += OnIncomingReceiveFailed;
-            newIncoming.DocumentsReceived += OnIncomingReceiveSucceeded;
+            var newIncoming = CreateIncomingReplicationHandler(tcpConnectionOptions, buffer);
 
             // need to safeguard against two concurrent connection attempts
             var newConnection = _incoming.GetOrAdd(newIncoming.ConnectionInfo.SourceDatabaseId, newIncoming);
@@ -221,6 +234,23 @@ namespace Raven.Server.Documents.Replication
             else
                 newIncoming.Dispose();
 
+            return newIncoming;
+        }
+
+        private IncomingReplicationHandler CreateIncomingReplicationHandler(
+            TcpConnectionOptions tcpConnectionOptions, 
+            JsonOperationContext.ManagedPinnedBuffer buffer)
+        {
+            var getLatestEtagMessage = IncomingInitialHandshake(tcpConnectionOptions, buffer);
+
+            var newIncoming = new IncomingReplicationHandler(
+                tcpConnectionOptions,
+                getLatestEtagMessage,
+                this,
+                buffer);
+
+            newIncoming.Failed += OnIncomingReceiveFailed;
+            newIncoming.DocumentsReceived += OnIncomingReceiveSucceeded;
             return newIncoming;
         }
 
@@ -762,7 +792,9 @@ namespace Raven.Server.Documents.Replication
             {
                 if (node is ExternalReplication exNode)
                 {
-                    using (var requestExecutor = RequestExecutor.Create(exNode.ConnectionString.TopologyDiscoveryUrls, exNode.ConnectionString.Database, _server.Server.Certificate.Certificate, DocumentConventions.Default))
+                    var certificate = GetCertificateForExternalReplication(exNode);
+
+                    using (var requestExecutor = RequestExecutor.Create(exNode.ConnectionString.TopologyDiscoveryUrls, exNode.ConnectionString.Database, certificate, DocumentConventions.Default))
                     using (_server.ContextPool.AllocateOperationContext(out TransactionOperationContext ctx))
                     {
                         var database = exNode.ConnectionString.Database;
@@ -792,6 +824,32 @@ namespace Raven.Server.Documents.Replication
                 _reconnectQueue.TryAdd(shutdownInfo);
             }
             return null;
+        }
+
+        public X509Certificate2 GetCertificateForExternalReplication(ExternalReplication exNode)
+        {
+            if(exNode == null)
+                return _server.Server.Certificate.Certificate;
+
+            if (exNode.PullReplication && exNode.PullReplicationCertificateThumbprint != null)
+            {
+                using (_server.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
+                using (context.OpenReadTransaction())
+                {
+                    var key = Constants.Certificates.Prefix + exNode.PullReplicationCertificateThumbprint;
+
+                    var certificate = _server.Cluster.Read(context, key);
+                    if (certificate == null)
+                    {
+                        return _server.Server.Certificate.Certificate;
+                    }
+
+                    var definition = JsonDeserializationServer.CertificateDefinition(certificate);
+                    return new X509Certificate2(Convert.FromBase64String(definition.Certificate), (string)null, X509KeyStorageFlags.MachineKeySet);
+                }
+            }
+
+            return _server.Server.Certificate.Certificate;
         }
 
         public (string Url, OngoingTaskConnectionStatus Status) GetExternalReplicationDestination(long taskId)

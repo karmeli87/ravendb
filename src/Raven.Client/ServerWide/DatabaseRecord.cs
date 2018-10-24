@@ -60,6 +60,8 @@ namespace Raven.Client.ServerWide
 
         public List<ExternalReplication> ExternalReplications = new List<ExternalReplication>(); // Watcher only receives (slave)
 
+        public List<PullReplicationDefinition> PullReplicationDefinitions = new List<PullReplicationDefinition>(); // Watcher only receives (slave)
+
         public Dictionary<string, RavenConnectionString> RavenConnectionStrings = new Dictionary<string, RavenConnectionString>();
 
         public Dictionary<string, SqlConnectionString> SqlConnectionStrings = new Dictionary<string, SqlConnectionString>();

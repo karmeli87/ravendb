@@ -128,7 +128,7 @@ namespace FastTests
 
         protected static string GenerateAndSaveSelfSignedCertificate()
         {
-            if (_selfSignedCertFileName == null)
+//           if (_selfSignedCertFileName == null)
                 GenerateSelfSignedCertFileName();
 
             var tmp = Path.GetTempFileName();

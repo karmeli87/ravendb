@@ -6,7 +6,9 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using Raven.Client;
 using Raven.Client.Documents.Changes;
 using Raven.Client.Documents.Operations.Replication;
 using Raven.Client.Documents.Replication;
@@ -108,7 +110,7 @@ namespace Raven.Server.Documents.Replication
         public void Start()
         {
             _longRunningSendingWork =
-                PoolOfThreads.GlobalRavenThreadPool.LongRunning(x => ReplicateToDestination(Replication), null, OutgoingReplicationThreadName);            
+                PoolOfThreads.GlobalRavenThreadPool.LongRunning(x => HandleReplicationErrors(Replication), null, OutgoingReplicationThreadName);            
         }
 
         public void StartPullReplication(Stream stream, TcpConnectionHeaderMessage.SupportedFeatures supportedVersions)
@@ -117,7 +119,7 @@ namespace Raven.Server.Documents.Replication
             _stream = stream;
 
             _longRunningSendingWork =
-                PoolOfThreads.GlobalRavenThreadPool.LongRunning(x => ReplicateToDestination(PullReplication), null, OutgoingReplicationThreadName);
+                PoolOfThreads.GlobalRavenThreadPool.LongRunning(x => HandleReplicationErrors(PullReplication), null, OutgoingReplicationThreadName);
         }
 
         public string OutgoingReplicationThreadName => $"Outgoing replication {FromToString}";
@@ -148,7 +150,9 @@ namespace Raven.Server.Documents.Replication
         private void Replication()
         {
             NativeMemory.EnsureRegistered();
-           
+
+            var certificate = _parent.GetCertificateForExternalReplication(Destination as ExternalReplication);
+
             using (_parent._server.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
             using (context.OpenReadTransaction())
             {
@@ -165,8 +169,7 @@ namespace Raven.Server.Documents.Replication
             task.Wait(CancellationToken);
             using (Interlocked.Exchange(ref _tcpClient, task.Result))
             {
-                var wrapSsl = TcpUtils.WrapStreamWithSslAsync(_tcpClient, _connectionInfo, _parent._server.Server.Certificate.Certificate,
-                    _parent._server.Engine.TcpConnectionTimeout);
+                var wrapSsl = TcpUtils.WrapStreamWithSslAsync(_tcpClient, _connectionInfo, certificate, _parent._server.Engine.TcpConnectionTimeout);
                 wrapSsl.Wait(CancellationToken);
 
                 _stream = wrapSsl.Result;
@@ -177,17 +180,21 @@ namespace Raven.Server.Documents.Replication
                     var supportedFeatures = NegotiateReplicationVersion();
                     if (supportedFeatures.Replication.CanPull)
                     {
-                        var isPullReplication = Destination is ExternalReplication ex && ex.PullReplication;
+                        var destination = Destination as ExternalReplication;
+                        var isPullReplication = destination?.PullReplicationSettings != null && 
+                                                destination.PullReplicationSettings.PullReplicationEnabled;
+
                         var request = new DynamicJsonValue
                         {
                             ["Type"] = nameof(ReplicationInitialRequest),
-                            [nameof(ReplicationInitialRequest.PullReplication)] = isPullReplication,
+                            [nameof(ReplicationInitialRequest.PullReplication)] = isPullReplication
                         };
 
                         if (isPullReplication)
                         {
+                            request[nameof(ReplicationInitialRequest.Database)] = _parent.Database.Name; // TODO: remove this
                             request[nameof(ReplicationInitialRequest.Info)] = _parent._server.GetTcpInfoAndCertificates(null);
-                            request[nameof(ReplicationInitialRequest.Database)] = _parent.Database.Name;
+                            request[nameof(ReplicationInitialRequest.PullReplicationDefinitionName)] = destination.PullReplicationSettings.RemoteName;
                         }
 
                         using (_database.DocumentsStorage.ContextPool.AllocateOperationContext(out DocumentsOperationContext documentsContext))
@@ -196,33 +203,10 @@ namespace Raven.Server.Documents.Replication
                             documentsContext.Write(writer, request);
                             writer.Flush();
                         }
-
                         if (isPullReplication)
                         {
-                            // start incoming thread
-                            var tcpOptions = new TcpConnectionOptions
-                            {
-                                ContextPool = _parent._server.Server._tcpContextPool,
-                                Stream = _stream,
-                                TcpClient = _tcpClient,
-                                Operation = TcpConnectionHeaderMessage.OperationTypes.Replication,
-                                DocumentDatabase = _database,
-                                ProtocolVersion = supportedFeatures.ProtocolVersion,
-                            };
-                            using (_parent._server.Server._tcpContextPool.AllocateOperationContext(out var ctx))
-                            using (ctx.GetManagedBuffer(out var copyBuffer))
-                            {
-                                var incoming = _parent.CreateIncomingInstance(tcpOptions, copyBuffer);
-                                incoming.Failed += RetryPullReplication;
-                                return;
-                            }
-
-                            void RetryPullReplication(IncomingReplicationHandler incomingReplicationHandler, Exception exception)
-                            {
-                                // if the central node failed, it is our duty to reconnect
-                                incomingReplicationHandler.Failed -= RetryPullReplication;
-                                _parent.AddAndStartOutgoingReplication(Destination, true);
-                            }
+                            InitiatePullReplication(supportedFeatures);
+                            return;
                         }
                     }
 
@@ -240,7 +224,26 @@ namespace Raven.Server.Documents.Replication
             }
         }
 
-        private void ReplicateToDestination(Action replicationAction)
+        private void InitiatePullReplication(TcpConnectionHeaderMessage.SupportedFeatures supportedFeatures)
+        {
+            var tcpOptions = new TcpConnectionOptions
+            {
+                ContextPool = _parent._server.Server._tcpContextPool,
+                Stream = _stream,
+                TcpClient = _tcpClient,
+                Operation = TcpConnectionHeaderMessage.OperationTypes.Replication,
+                DocumentDatabase = _database,
+                ProtocolVersion = supportedFeatures.ProtocolVersion,
+            };
+
+            using (_parent._server.Server._tcpContextPool.AllocateOperationContext(out var ctx))
+            using (ctx.GetManagedBuffer(out _buffer))
+            {
+                _parent.RunPullReplication(tcpOptions, _buffer, Destination);
+            }
+        }
+
+        private void HandleReplicationErrors(Action replicationAction)
         {
             try
             {
