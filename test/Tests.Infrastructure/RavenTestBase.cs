@@ -37,7 +37,7 @@ using Xunit;
 
 namespace FastTests
 {
-    public class RavenTestBase : TestBase
+    public class RavenTestBase : RavenLowLevelTestBase
     {
         protected readonly ConcurrentSet<DocumentStore> CreatedStores = new ConcurrentSet<DocumentStore>();
 

@@ -28,6 +28,68 @@ namespace SlowTests.Cluster
     public class ClusterTransactionTests : ReplicationTestBase
     {
         [Fact]
+        public async Task Tester()
+        {
+            Task t;
+            using (CreatePersistentDocumentDatabase(NewDataPath(), out var database))
+            {
+                //  OpenBrowser(database.ServerStore.Server.WebUrl);
+                t = Task.Run(() =>
+                {
+                    using (var store = GetDocumentStore(new Options
+                    {
+                        Server = database.ServerStore.Server,
+                        DeleteDatabaseOnDispose = false,
+                        CreateDatabase = false,
+                        ModifyDatabaseName = _ => database.Name
+                    }))
+                    {
+                        while (database.ServerStore.ServerShutdown.IsCancellationRequested == false)
+                        {
+                            using (var session = store.OpenSession())
+                            {
+                                session.Store(new Core.Utils.Entities.User());
+                                session.SaveChanges();
+                            }
+                        }
+                    }
+                });
+
+                for (int i = 0; i < 5; i++)
+                {
+                    try
+                    {
+                        await database.IndexStore.CreateIndex(new IndexDefinition
+                        {
+                            Name = "Index" + i,
+                            Maps =
+                            {
+                                @"from user in docs.Users select new { user.Name }",
+                            },
+                            Type = IndexType.Map
+                        });
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+
+                }
+                await Task.Delay(5000);
+            }
+
+
+            try
+            {
+                await t;
+            }
+            catch
+            {
+                //
+            }
+        }
+
+        [Fact]
         public async Task CanCreateClusterTransactionRequest()
         {
             var leader = await CreateRaftClusterAndGetLeader(3);

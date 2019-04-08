@@ -217,9 +217,10 @@ namespace Raven.Server.Documents
             IDisposable removeLockAndReturn = null;
             try
             {
+                DocumentDatabase database;
                 try
                 {
-                    removeLockAndReturn = DatabasesCache.RemoveLockAndReturn(dbName, CompleteDatabaseUnloading, out _);
+                    removeLockAndReturn = DatabasesCache.RemoveLockAndReturn(dbName, CompleteDatabaseUnloading, out database);
                 }
                 catch (AggregateException ae) when (nameof(DeleteDatabase).Equals(ae.InnerException.Data["Source"]))
                 {
@@ -245,7 +246,16 @@ namespace Raven.Server.Documents
                     // this can happen if the database record was already deleted
                     if (configuration != null)
                     {
-                        DatabaseHelper.DeleteDatabaseFiles(configuration);
+                        try
+                        {
+                            DatabaseHelper.DeleteDatabaseFiles(configuration);
+                        }
+                        catch (Exception e)
+                        {
+                            var d = database;
+                            Console.WriteLine(e);
+                            Console.ReadKey();
+                        }
                     }
                 }
 
@@ -858,8 +868,8 @@ namespace Raven.Server.Documents
             }
             catch (Exception e)
             {
-                if (_logger.IsInfoEnabled)
-                    _logger.Info("Could not dispose database: " + database.Name, e);
+                if (_logger.IsOperationsEnabled)
+                    _logger.Operations("Could not dispose database: " + database.Name, e);
             }
 
             database.DatabaseShutdownCompleted.Set();

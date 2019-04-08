@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using Raven.Server.Documents;
 using Raven.Server.Documents.Queries.AST;
 using Raven.Server.Documents.Queries.Parser;
+using SlowTests.Client.Counters;
 using SlowTests.Cluster;
 using SlowTests.Issues;
 using Sparrow;
@@ -21,17 +22,32 @@ namespace Tryouts
 {
     public static class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             //Console.WriteLine($"Press any key to start... (Process ID: {Process.GetCurrentProcess().Id})");
             //Console.ReadKey();
-            for (int i = 0; i < 1000; i++)
+            try
             {
-                Console.WriteLine(i);
                 using (var test = new ClusterTransactionTests())
                 {
-                    test.CreateUniqueUser().Wait();
+                  
+                    for (int i = 0; i < 1000; i++)
+                    {
+                        Console.WriteLine(i);
+                        var tasks = new List<Task>();
+                        for (int j = 0; j < 5; j++)
+                        {
+                            tasks.Add(test.Tester());
+                        }
+
+                        await Task.WhenAll(tasks);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Console.ReadKey();
             }
         }
     }
