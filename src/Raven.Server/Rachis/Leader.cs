@@ -472,7 +472,7 @@ namespace Raven.Server.Rachis
                 maxIndexOnQuorum = _engine.Apply(context, maxIndexOnQuorum, this, Stopwatch.StartNew());
 
                 context.Transaction.Commit();
-
+          //      Console.WriteLine($"Committed up to {maxIndexOnQuorum}");
                 _lastCommit = maxIndexOnQuorum;
             }
 
@@ -689,6 +689,7 @@ namespace Raven.Server.Rachis
                 using (context.OpenWriteTransaction())
                 {
                     var cmdsCount = 0;
+                    _engine.GetLastCommitIndex(context, out var lastCommitted, out _);
                     while (cmdsCount++ < 128 && _commandsQueue.TryDequeue(out var cmd))
                     {
                         if (cmd.Consumed.Raise() == false)
@@ -710,7 +711,29 @@ namespace Raven.Server.Rachis
                         var djv = cmd.Command.ToJson(context);
                         var cmdJson = context.ReadObject(djv, "raft/command");
 
-                        var index = _engine.InsertToLeaderLog(context, Term, cmdJson, RachisEntryFlags.StateMachineCommand);
+                        if (_engine.HasHistoryLog(context, cmdJson, out var index, out var result, out var exception))
+                        {
+                            // if this command is already committed, we can skip it and notify the caller about it
+                            if (lastCommitted >= index) 
+                            {
+                                if (exception != null)
+                                {
+                                    cmd.Tcs.TrySetException(new Exception(exception));
+                                }
+                                else
+                                {
+                                    result = GetConvertResult(cmd.Command)?.Apply(result) ?? cmd.Command.FromRemote(result);
+                                    var completed = new ValueTask<(long, object)>((index, result));
+                                    cmd.Tcs.TrySetResult(completed.AsTask());
+                                }
+                                list.Remove(cmd.Tcs);
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            index = _engine.InsertToLeaderLog(context, Term, cmdJson, RachisEntryFlags.StateMachineCommand);
+                        }
 
                         var tcs = new TaskCompletionSource<(long, object)>(TaskCreationOptions.RunContinuationsAsynchronously);
                         tasks.Add(tcs.Task);
@@ -721,11 +744,15 @@ namespace Raven.Server.Rachis
                             {
                                 CommandIndex = index,
                                 TaskCompletionSource = tcs,
-                                ConvertResult = GetConvertResult(cmd.Command)
+                                ConvertResult = GetConvertResult(cmd.Command),
+                             //   Debug = cmd.Command is ClusterTransactionCommand ctc ? $"{ctc.ClusterCommands[0].Id} guid: {ctc.Guid}" : null
                         };
+                 //       Console.WriteLine($"Appending {state.Debug} (index {state.CommandIndex})");
                         _entries[index] = state;
                     }
                     context.Transaction.Commit();
+
+                 //   Console.WriteLine($"Appended up to {_engine.GetLastEntryIndex(context)}");
                 }
 
                 if (tasks.Count > 0)
@@ -812,9 +839,10 @@ namespace Raven.Server.Rachis
                     {
                         _newEntriesArrived.TrySetCanceled();
                         var lastStateChangeReason = _engine.LastStateChangeReason;
-                        TimeoutException te = null;
+                        NotLeadingException te = null;
                         if (string.IsNullOrEmpty(lastStateChangeReason) == false)
-                            te = new TimeoutException(lastStateChangeReason);
+                            te = new NotLeadingException(lastStateChangeReason);
+
                         foreach (var entry in _entries)
                         {
                             if (te == null)
@@ -1083,6 +1111,7 @@ namespace Raven.Server.Rachis
             public ConvertResultAction ConvertResult;
             public TaskCompletionSource<(long, object)> TaskCompletionSource;
             public Action<TaskCompletionSource<(long, object)>> OnNotify;
+            public string Debug;
         }
 
         public class ConvertResultAction
