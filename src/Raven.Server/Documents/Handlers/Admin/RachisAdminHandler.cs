@@ -175,6 +175,20 @@ namespace Raven.Server.Documents.Handlers.Admin
             return Task.CompletedTask;
         }
 
+        [RavenAction("/admin/debug/cluster/history-logs", "GET", AuthorizationStatus.Operator)]
+        public Task GetHistoryLogs()
+        {
+            using (ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
+            using (var writer = new BlittableJsonTextWriter(context, ResponseBodyStream()))
+            {
+                context.OpenReadTransaction();
+                writer.WriteArray("RaftLogHistory", ServerStore.Engine.GetHistoryLogs(context), context);
+                writer.Flush();
+            }
+            return Task.CompletedTask;
+        }
+
+
         [RavenAction("/cluster/node-info", "GET", AuthorizationStatus.ValidUser)]
         public Task GetNodeInfo()
         {
@@ -309,7 +323,7 @@ namespace Raven.Server.Documents.Handlers.Admin
             var nodeUrl = GetQueryStringValueAndAssertIfSingleAndNotEmpty("url");
             var tag = GetStringQueryString("tag", false);
             var watcher = GetBoolValueQueryString("watcher", false);
-            var guid = GetRaftRequestIdFromQuery();
+            var raftRequestId = GetRaftRequestIdFromQuery();
             var assignedCores = GetIntValueQueryString("assignedCores", false);
             if (assignedCores <= 0)
                 throw new ArgumentException("Assigned cores must be greater than 0!");
@@ -481,7 +495,7 @@ namespace Raven.Server.Documents.Handlers.Admin
                                 };
 
                                 var res = await ServerStore.PutValueInClusterAsync(new PutCertificateCommand(certificate.Thumbprint, certificateDefinition,
-                                    $"{guid}/put-new-certificate"));
+                                    $"{raftRequestId}/put-new-certificate"));
                                 await ServerStore.Cluster.WaitForIndexNotification(res.Index);
                             }
                         }
@@ -514,7 +528,7 @@ namespace Raven.Server.Documents.Handlers.Admin
                                     modifiedServerCert.Name += ", " + value;
                             }
 
-                            var res = await ServerStore.PutValueInClusterAsync(new PutCertificateCommand(certificate.Thumbprint, modifiedServerCert, $"{guid}/put-modified-certificate"));
+                            var res = await ServerStore.PutValueInClusterAsync(new PutCertificateCommand(certificate.Thumbprint, modifiedServerCert, $"{raftRequestId}/put-modified-certificate"));
                             await ServerStore.Cluster.WaitForIndexNotification(res.Index);
                         }
 
