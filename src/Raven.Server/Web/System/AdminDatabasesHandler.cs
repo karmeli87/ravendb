@@ -689,7 +689,7 @@ namespace Raven.Server.Web.System
                 long index = -1;
                 foreach (var name in parameters.DatabaseNames)
                 {
-                    var (newIndex, _) = await ServerStore.DeleteDatabaseAsync(name, parameters.HardDelete, parameters.FromNodes, Guid.NewGuid().ToString());
+                    var (newIndex, _) = await ServerStore.DeleteDatabaseAsync(name, parameters.HardDelete, parameters.FromNodes, $"{GetRaftRequestIdFromQuery()}/{name}");
                     index = newIndex;
                 }
                 await ServerStore.Cluster.WaitForIndexNotification(index);
@@ -801,7 +801,7 @@ namespace Raven.Server.Web.System
                 var parameters = JsonDeserializationServer.Parameters.DisableDatabaseToggleParameters(json);
 
                 var resultList = new List<DynamicJsonValue>();
-
+                var raftRequestId = GetRaftRequestIdFromQuery();
                 foreach (var name in parameters.DatabaseNames)
                 {
                     DatabaseRecord databaseRecord;
@@ -834,7 +834,7 @@ namespace Raven.Server.Web.System
 
                     databaseRecord.Disabled = disable;
 
-                    var (index, _) = await ServerStore.WriteDatabaseRecordAsync(name, databaseRecord, null, Guid.NewGuid().ToString());
+                    var (index, _) = await ServerStore.WriteDatabaseRecordAsync(name, databaseRecord, null, $"{raftRequestId}/{name}");
                     await ServerStore.Cluster.WaitForIndexNotification(index);
 
                     resultList.Add(new DynamicJsonValue
@@ -1143,7 +1143,7 @@ namespace Raven.Server.Web.System
             using (ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
             {
                 context.OpenReadTransaction();
-                await CreateDatabase(databaseName, configuration.DatabaseRecord, context, 1, null, Guid.NewGuid().ToString());
+                await CreateDatabase(databaseName, configuration.DatabaseRecord, context, 1, null, RaftIdGenerator.NewId);
             }
 
             var database = await ServerStore.DatabasesLandlord.TryGetOrCreateResourceStore(databaseName, true);
