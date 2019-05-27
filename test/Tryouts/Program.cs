@@ -1,5 +1,6 @@
 using System;
 using SlowTests.Client.Counters;
+using SlowTests.Cluster;
 
 namespace Tryouts
 {
@@ -10,9 +11,9 @@ namespace Tryouts
             for (int i = 0; i < 123; i++)
             {
                 Console.WriteLine(i);
-                using (var test = new QueryOnCounters())
+                using (var test = new ClusterTransactionTests())
                 {
-                    test.CountersShouldBeCachedOnCollection();
+                    test.CanCreateClusterTransactionRequest2().Wait();
                 }
             }
         }

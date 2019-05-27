@@ -35,9 +35,10 @@ namespace SlowTests.Cluster
             if (customSettings == null)
                 customSettings = new Dictionary<string, string>();
 
-            customSettings[RavenConfiguration.GetKey(x => x.Cluster.OperationTimeout)] = "60";
-            customSettings[RavenConfiguration.GetKey(x => x.Cluster.StabilizationTime)] = "10";
-            customSettings[RavenConfiguration.GetKey(x => x.Cluster.TcpConnectionTimeout)] = "30000";
+            customSettings[RavenConfiguration.GetKey(x => x.Cluster.OperationTimeout)] = "10";
+            customSettings[RavenConfiguration.GetKey(x => x.Cluster.StabilizationTime)] = "1";
+            customSettings[RavenConfiguration.GetKey(x => x.Cluster.TcpConnectionTimeout)] = "3000";
+            customSettings[RavenConfiguration.GetKey(x => x.Cluster.ElectionTimeout)] = "50";
 
             return base.GetNewServer(customSettings, deletePrevious, runInMemory, partialPath, customConfigPath);
         }
@@ -82,40 +83,52 @@ namespace SlowTests.Cluster
         public async Task CanCreateClusterTransactionRequest2()
         {
             DebuggerAttachedTimeout.DisableLongTimespan = true;
-            var leader = await CreateRaftClusterAndGetLeader(2);
+            var numberOfNodes = 7;
+            var cluster = await CreateRaftCluster(numberOfNodes);
             using (var leaderStore = GetDocumentStore(new Options
             {
-                Server = leader,
-                ReplicationFactor = 2
+                Server = cluster.Leader,
+                ReplicationFactor = numberOfNodes
             }))
             {
                 var count = 0;
                 var tasks = new List<Task>();
+                var random = new Random();
+
+          //      OpenBrowser(cluster.Leader.WebUrl);
+          //      OpenBrowser(cluster.Leader.WebUrl);
+
                 for (int i = 0; i < 100; i++)
                 {
                     var t = Task.Run(async () =>
                     {
-                        /*
-                        for (int j = 0; j < 10; j++)
+                        var nodeNum = random.Next(0, numberOfNodes);
+                        using (var store = GetDocumentStore(new Options
                         {
-                            leaderStore.Operations.SendAsync(new PutCompareExchangeValueOperation<User>($"usernames/{Interlocked.Increment(ref count)}", new User(), 0));
-                        }
-*/
-
-                        using (var session = leaderStore.OpenAsyncSession(new SessionOptions
-                        {
-                            TransactionMode = TransactionMode.ClusterWide
+                            Server = cluster.Nodes[nodeNum],
+                            CreateDatabase = false
                         }))
                         {
-                            session.Advanced.ClusterTransaction.CreateCompareExchangeValue($"usernames/{Interlocked.Increment(ref count)}", new User());
-                            await session.SaveChangesAsync();
-                        }
+                            for (int j = 0; j < 10; j++)
+                            {
+                                try
+                                {
+                                    await store.Operations.ForDatabase(leaderStore.Database).SendAsync(new PutCompareExchangeValueOperation<User>($"usernames/{Interlocked.Increment(ref count)}", new User(), 0));
 
-                        await ActionWithLeader((l) =>
-                        {
-                            l.ServerStore.Engine.CurrentLeader?.StepDown();
-                            return Task.CompletedTask;
-                        });
+                                    using (var session = store.OpenAsyncSession(leaderStore.Database))
+                                    {
+                                        session.Advanced.SetTransactionMode(TransactionMode.ClusterWide);
+                                        session.Advanced.ClusterTransaction.CreateCompareExchangeValue($"usernames/{Interlocked.Increment(ref count)}", new User());
+                                        await session.StoreAsync(new User());
+                                        await session.SaveChangesAsync();
+                                    }
+                                }
+                                catch
+                                {
+                                   //
+                                }
+                            }
+                        }
                     });
                     tasks.Add(t);
                 }
@@ -130,15 +143,12 @@ namespace SlowTests.Cluster
                     }
                     catch (Exception e)
                     {
+                     //   Console.WriteLine(e);
                         hasExecption = true;
-                        Console.WriteLine(task.Exception.InnerExceptions[0].Message);
                     }
                 }
 
-                if (hasExecption)
-                {
-                    throw new InvalidOperationException();
-                }
+             
             }
 
         }

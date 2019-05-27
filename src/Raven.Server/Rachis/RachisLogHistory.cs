@@ -143,7 +143,7 @@ namespace Raven.Server.Rachis
             }
         }
 
-        public void UpdateHistoryLog(TransactionOperationContext context, long index, long term, BlittableJsonReaderObject cmd, object result, Exception exception)
+        public void UpdateHistoryLog(TransactionOperationContext context, long index, BlittableJsonReaderObject cmd, object result, Exception exception)
         {
             var guid = GetGuidFromCommand(cmd);
             if (guid == null) // shouldn't happened in new cluster version!
@@ -153,16 +153,17 @@ namespace Raven.Server.Rachis
 
             var type = GetTypeFromCommand(cmd);
 
-            UpdateInternal(context, guid, type, index, term, HistoryStatus.Committed, result, exception);
+            UpdateInternal(context, guid, type, index, HistoryStatus.Committed, result, exception);
         }
 
-        private unsafe void UpdateInternal(TransactionOperationContext context, string guid, string type, long index, long term, HistoryStatus status, object result, Exception exception)
+        private unsafe void UpdateInternal(TransactionOperationContext context, string guid, string type, long index, HistoryStatus status, object result, Exception exception)
         {
             var table = context.Transaction.InnerTransaction.OpenTable(LogHistoryTable, LogHistorySlice);
 
+            TableValueReader reader;
             using (Slice.From(context.Allocator, guid, out var guidSlice))
             {
-                if (table.VerifyKeyExists(guidSlice) == false)
+                if (table.ReadByKey(guidSlice, out reader) == false)
                     return;
             }
 
@@ -178,7 +179,7 @@ namespace Raven.Server.Rachis
                 tvb.Add(guidSlice);
                 tvb.Add(Bits.SwapBytes(index));
                 tvb.Add(Bits.SwapBytes(DateTime.UtcNow.Ticks));
-                tvb.Add(term);
+                tvb.Add(*(long*)reader.Read((int)(LogHistoryColumn.Term), out _));
                 tvb.Add(typeSlice);
                 tvb.Add((byte)status);
                 if (result == null)
@@ -251,7 +252,7 @@ namespace Raven.Server.Rachis
 
                 foreach (var entry in toCancel)
                 {
-                    UpdateInternal(context, entry.Guid, entry.Type, entry.Index, entry.Term, entry.Status, null, new OperationCanceledException(msg));
+                    UpdateInternal(context, entry.Guid, entry.Type, entry.Index, entry.Status, null, new OperationCanceledException(msg));
                 }
             }
         }
@@ -262,6 +263,26 @@ namespace Raven.Server.Rachis
             foreach (var entryHolder in table.SeekForwardFrom(LogHistoryTable.FixedSizeIndexes[LogHistoryDateTimeSlice], 0, 0))
             {
                 yield return ReadHistoryLog(context, entryHolder);
+            }
+        }
+
+        public unsafe List<DynamicJsonValue> GetLogByIndex(TransactionOperationContext context, long index)
+        {
+            var table = context.Transaction.InnerTransaction.OpenTable(LogHistoryTable, LogHistorySlice);
+            var reversedIndex = Bits.SwapBytes(index);
+            using (Slice.External(context.Allocator, (byte*)&reversedIndex, sizeof(long), out var key))
+            {
+                var res = new List<DynamicJsonValue>();
+                foreach (var entryHolder in table.SeekForwardFrom(LogHistoryTable.Indexes[LogHistoryIndexSlice], key, 0))
+                {
+                    var entry = ReadHistoryLog(context, entryHolder.Result);
+                    if (entry[nameof(LogHistoryColumn.Index)].Equals(index) == false)
+                    {
+                        break;
+                    }
+                    res.Add(entry);
+                }
+                return res;
             }
         }
 

@@ -163,7 +163,7 @@ namespace Raven.Server.Documents.Replication
                 //conflict with another existing document
                 var localHiloDoc = _database.DocumentsStorage.Get(context, id);
                 if (localHiloDoc.Data.TryGet("Max", out double max) && max > highestMax)
-                    resolvedHiLoDoc = localHiloDoc.Data;
+                    resolvedHiLoDoc = localHiloDoc.Data.Clone(context);
                 mergedChangeVector = ChangeVectorUtils.MergeVectors(changeVector, localHiloDoc.ChangeVector);
             }
             else

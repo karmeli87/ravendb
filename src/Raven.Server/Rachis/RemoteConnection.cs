@@ -178,6 +178,8 @@ namespace Raven.Server.Rachis
                 [nameof(RequestVote.Source)] = rv.Source,
                 [nameof(RequestVote.LastLogTerm)] = rv.LastLogTerm,
                 [nameof(RequestVote.LastLogIndex)] = rv.LastLogIndex,
+                [nameof(RequestVote.LastCommittedIndex)] = rv.LastCommittedIndex,
+                [nameof(RequestVote.LastCommittedTerm)] = rv.LastCommittedTerm,
                 [nameof(RequestVote.IsTrialElection)] = rv.IsTrialElection,
                 [nameof(RequestVote.IsForcedElection)] = rv.IsForcedElection,
                 [nameof(RequestVote.ElectionResult)] = rv.ElectionResult,

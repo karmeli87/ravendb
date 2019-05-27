@@ -63,7 +63,7 @@ namespace Raven.Server.ServerWide
         private readonly Logger _clusterAuditLog = LoggingSource.AuditLog.GetLogger("ClusterStateMachine", "Audit");
 
         private const string LocalNodeStateTreeName = "LocalNodeState";
-        private static readonly StringSegment DatabaseName = new StringSegment("DatabaseName");
+        private static readonly StringSegment DatabaseNameSegment = new StringSegment("DatabaseName");
 
         public static readonly TableSchema ItemsSchema;
         public static readonly TableSchema CompareExchangeSchema;
@@ -404,14 +404,14 @@ namespace Raven.Server.ServerWide
                         throw new UnknownClusterCommand(massage);
                 }
 
-                _parent.LogHistory.UpdateHistoryLog(context, index, _parent.CurrentTerm, cmd, result, null);
+                _parent.LogHistory.UpdateHistoryLog(context, index, cmd, result, null);
             }
             catch (Exception e) when (ExpectedException(e))
             {
                 if (_parent.Log.IsInfoEnabled)
-                    _parent.Log.Info($"Failed to execute command of type '{type}' on database '{DatabaseName}'", e);
+                    _parent.Log.Info($"Failed to execute command of type '{type}' on database '{DatabaseNameSegment}'", e);
 
-                _parent.LogHistory.UpdateHistoryLog(context, index, _parent.CurrentTerm, cmd, null, e);
+                _parent.LogHistory.UpdateHistoryLog(context, index, cmd, null, e);
                 NotifyLeaderAboutError(index, leader, e);
             }
             catch (Exception e)
@@ -420,7 +420,7 @@ namespace Raven.Server.ServerWide
                 // Other exceptions MUST be consistent across the cluster (meaning: if it occured on one node it must occur on the rest also).
                 // the exceptions here are machine specific and will cause a jam in the state machine until the exception will be resolved.
                 if (_parent.Log.IsInfoEnabled)
-                    _parent.Log.Info($"Unrecoverable exception on database '{DatabaseName}' at command type '{type}', execution will be retried later.", e);
+                    _parent.Log.Info($"Unrecoverable exception on database '{DatabaseNameSegment}' at command type '{type}', execution will be retried later.", e);
 
                 NotifyLeaderAboutError(index, leader, e);
                 throw;
@@ -1550,7 +1550,7 @@ namespace Raven.Server.ServerWide
 
         private void UpdateDatabase(TransactionOperationContext context, string type, BlittableJsonReaderObject cmd, long index, Leader leader, ServerStore serverStore)
         {
-            if (cmd.TryGet(DatabaseName, out string databaseName) == false || string.IsNullOrEmpty(databaseName))
+            if (cmd.TryGet(DatabaseNameSegment, out string databaseName) == false || string.IsNullOrEmpty(databaseName))
                 throw new RachisApplyException("Update database command must contain a DatabaseName property");
 
             UpdateDatabaseCommand updateCommand = null;
@@ -1700,7 +1700,7 @@ namespace Raven.Server.ServerWide
 
             (CompareExchangeTombstones.Content, ClusterCommandsVersionManager.Base42CommandsVersion,SnapshotEntryType.Command),
             (CertificatesSlice.Content, ClusterCommandsVersionManager.Base42CommandsVersion,SnapshotEntryType.Command),
-            (RachisLogHistory.LogHistorySlice.Content, 42_000,SnapshotEntryType.Core)
+          //  (RachisLogHistory.LogHistorySlice.Content, 42_000,SnapshotEntryType.Core)
         };
 
         public override bool ShouldSnapshot(Slice slice, RootObjectType type)

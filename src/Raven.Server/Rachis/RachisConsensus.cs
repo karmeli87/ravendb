@@ -271,7 +271,12 @@ namespace Raven.Server.Rachis
 
         private readonly List<IDisposable> _disposables = new List<IDisposable>();
 
-        public long CurrentTerm { get; private set; }
+        public long CurrentTerm
+        {
+            get => Volatile.Read(ref _currentTerm);
+            private set => Volatile.Write(ref _currentTerm, value);
+        }
+
         public string Tag => _tag;
         public string ClusterId => _clusterId;
         public string ClusterBase64Id => _clusterIdBase64Id;
@@ -741,6 +746,7 @@ namespace Raven.Server.Rachis
 
             CurrentState = RachisState.Leader;
             TaskExecutor.CompleteAndReplace(ref _stateChanged);
+            Console.WriteLine($"{Tag} in term {CurrentTerm} took office");
             return true;
         }
 
@@ -784,6 +790,7 @@ namespace Raven.Server.Rachis
                 ClusterCommandsVersionManager.SetClusterVersion(version);
                 _currentLeader = leader;
             });
+            Console.WriteLine($"{Tag} Won in term {electionTerm}");
             leader.Start(connections);
         }
 
@@ -1217,8 +1224,7 @@ namespace Raven.Server.Rachis
             }
         }
 
-        public unsafe (BlittableJsonReaderObject LastTopology, long LastTopologyIndex) AppendToLog(TransactionOperationContext context,
-            List<RachisEntry> entries)
+        public unsafe (BlittableJsonReaderObject LastTopology, long LastTopologyIndex) AppendToLog(TransactionOperationContext context, List<RachisEntry> entries, string parent)
         {
             Debug.Assert(entries.Count > 0);
             Debug.Assert(context.Transaction != null);
@@ -1240,11 +1246,13 @@ namespace Raven.Server.Rachis
                     {
                         //rewind entries with mismatched term
                         lastEntryIndex = Math.Min(entry.Index - 1, lastEntryIndex);
+
                         if (Log.IsInfoEnabled)
                         {
                             Log.Info($"Got an entry with index={entry.Index:#,#;;0} and term={entry.Term:#,#;;0} while our term for that index is {entryTerm:#,#;;0}," +
                                      $"will rewind last entry index to {lastEntryIndex:#,#;;0}");
                         }
+                        Console.WriteLine($"{parent} Got an entry with index ={entry.Index:#,#;;0} and term={entry.Term:#,#;;0} while our term for that index is {entryTerm:#,#;;0} will rewind last entry index to {lastEntryIndex:#,#;;0} (committed:{lastCommitIndex}/{lastCommitTerm})");
                         break;
                     }
                     if (entry.Index > lastEntryIndex)
@@ -1260,6 +1268,12 @@ namespace Raven.Server.Rachis
                 //While we do support the case where we get the same entries, we expect them to have the same index/term up to the commit index.
                 if (firstEntry.Index < lastCommitIndex)
                 {
+                    Console.WriteLine($"{parent} Incoming : {firstEntry.Entry}");
+                    foreach (var value in LogHistory.GetLogByIndex(context, firstEntry.Index))
+                    {
+                        Console.WriteLine($"{parent} Existing : {context.ReadObject(value,"asd")}");
+                    }
+
                     ThrowFatalError(firstEntry, GetTermFor(context, firstEntry.Index), lastCommitIndex, lastCommitTerm);
                 }
                 var prevIndex = lastEntryIndex;
@@ -1331,6 +1345,9 @@ namespace Raven.Server.Rachis
                 $"FATAL ERROR: got an append entries request with index={firstEntry.Index:#,#;;0} term={firstEntry.Term:#,#;;0} " +
                 $"while my term for this index is {myTermForTheIndex:#,#;;0}. " +
                 $"(last commit index={lastCommitIndex:#,#;;0} with term={lastCommitTerm:#,#;;0}), this means something went wrong badly.";
+
+            Console.WriteLine(message);
+            
             if (Log.IsOperationsEnabled)
             {
                 Log.Operations(message);
@@ -1869,6 +1886,7 @@ namespace Raven.Server.Rachis
         private TimeSpan _tcpConnectionTimeout;
         private DateTime _lastStateChangeTime;
         private readonly string _clusterIdBase64Id = new string(' ',22);
+        private long _currentTerm;
 
         private unsafe void SetClusterBase(string str)
         {

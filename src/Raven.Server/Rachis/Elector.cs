@@ -24,6 +24,11 @@ namespace Raven.Server.Rachis
             _electorLongRunningWork = PoolOfThreads.GlobalRavenThreadPool.LongRunning(x => HandleVoteRequest(), null, $"Elector for candidate {_connection.Source}");
         }
 
+        public override string ToString()
+        {
+            return $"Elector {_engine.Tag} for {_connection.Source}";
+        }
+
         public void HandleVoteRequest()
         {
             try
@@ -293,10 +298,34 @@ namespace Raven.Server.Rachis
         {
             var result = new HandleVoteResult();
             var lastEntryUnderWriteLock = _engine.GetLastEntryIndex(context);
+            _engine.GetLastCommitIndex(context, out var lastCommittedIndex, out var lastCommittedTerm);
+
             if (lastEntryUnderWriteLock != lastIndex)
             {
                 result.DeclineVote = true;
                 result.DeclineReason = "Log was changed";
+                return result;
+            }
+
+            /*if (lastCommittedIndex > rv.LastCommittedIndex)
+            {
+                result.DeclineVote = true;
+                result.DeclineReason = $"My committed index {lastCommittedIndex} is greater than yours {rv.LastCommittedIndex}";
+           //     Console.WriteLine($"{ToString()} {result.DeclineReason}");
+                return result;
+            }*/
+
+            if (lastTerm >= rv.Term)
+            {
+                result.DeclineVote = true;
+                result.DeclineReason = $"My last log term {lastEntryUnderWriteLock}, is higher than yours {rv.LastLogTerm}.";
+                return result;
+            }
+
+            if (lastEntryUnderWriteLock > rv.LastLogIndex)
+            {
+                result.DeclineVote = true;
+                result.DeclineReason = $"Vote declined because my log {lastEntryUnderWriteLock} is more up to date than yours {rv.LastLogIndex}";
                 return result;
             }
 
@@ -309,16 +338,11 @@ namespace Raven.Server.Rachis
                 result.DeclineReason = $"Already voted in {rv.LastLogTerm}, for {whoGotMyVoteIn}";
                 return result;
             }
+
             if (votedTerm >= rv.Term)
             {
                 result.DeclineVote = true;
                 result.DeclineReason = $"Already voted in {rv.LastLogTerm}, for another node in higher term: {votedTerm}";
-                return result;
-            }
-            if (lastTerm == rv.LastLogTerm && lastIndex > rv.LastLogIndex)
-            {
-                result.DeclineVote = true;
-                result.DeclineReason = $"Vote declined because my log {lastIndex} is more up to date than yours {rv.LastLogIndex}";
                 return result;
             }
 

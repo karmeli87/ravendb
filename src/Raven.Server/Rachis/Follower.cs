@@ -11,6 +11,7 @@ using Raven.Server.ServerWide;
 using Raven.Server.ServerWide.Context;
 using Raven.Server.Utils;
 using Sparrow;
+using Sparrow.Collections;
 using Sparrow.Json;
 using Sparrow.Server;
 using Sparrow.Utils;
@@ -54,7 +55,7 @@ namespace Raven.Server.Rachis
         private void FollowerSteadyState()
         {
             var entries = new List<RachisEntry>();
-            long lastCommit = 0, lastTruncate = 0;
+            long lastCommit = 0, lastTruncate = 0, lastLogIndex = 0;
             if (_engine.Log.IsInfoEnabled)
             {
                 _engine.Log.Info($"{ToString()}: Entering steady state");
@@ -113,13 +114,11 @@ namespace Raven.Server.Rachis
                         {
                             _engine.Log.Info($"{ToString()}: Got non empty append entries request with {entries.Count} entries. Last: ({entries[entries.Count - 1].Index} - {entries[entries.Count - 1].Flags})"
 #if DEBUG
-                                + $"[{string.Join(" ,", entries.Select(x => x.ToString()))}]"
+                           //     + $"[{string.Join(" ,", entries.Select(x => x.ToString()))}]"
 #endif
                                 );
                         }
                     }
-
-                    var lastLogIndex = appendEntries.PrevLogIndex;
 
                     // don't start write transaction for noop
                     if (lastCommit != appendEntries.LeaderCommit ||
@@ -130,7 +129,7 @@ namespace Raven.Server.Rachis
                         {
                             // applying the leader state may take a while, we need to ping
                             // the server and let us know that we are still there
-                            var task = Concurrent_SendAppendEntriesPendingToLeaderAsync(cts, _term, lastLogIndex);
+                            var task = Concurrent_SendAppendEntriesPendingToLeaderAsync(cts, _term, appendEntries.PrevLogIndex);
                             try
                             {
                                 bool hasRemovedFromTopology;
@@ -271,7 +270,7 @@ namespace Raven.Server.Rachis
 
                 if (entries.Count > 0)
                 {
-                    var (lastTopology, lastTopologyIndex) = _engine.AppendToLog(context, entries);
+                    var (lastTopology, lastTopologyIndex) = _engine.AppendToLog(context, entries, ToString());
                     using (lastTopology)
                     {
                         if (lastTopology != null)
@@ -313,7 +312,7 @@ namespace Raven.Server.Rachis
                 lastTruncate = Math.Min(appendEntries.TruncateLogBefore, lastAppliedIndex);
                 _engine.TruncateLogBefore(context, lastTruncate);
 
-                lastCommit = lastEntryIndexToCommit;
+                lastCommit = lastAppliedIndex;
                 if (_engine.Log.IsInfoEnabled)
                 {
                     _engine.Log.Info($"{ToString()}: Ready to commit in {sp.Elapsed}");
@@ -363,6 +362,8 @@ namespace Raven.Server.Rachis
             }
             return true;
         }
+
+        private static ConcurrentSet<string> FollowerNames = new ConcurrentSet<string>();
 
         private void NegotiateWithLeader(TransactionOperationContext context, LogLengthNegotiation negotiation)
         {
@@ -422,10 +423,23 @@ namespace Raven.Server.Rachis
             }
             else
             {
+                // not a new connection!
                 if (_engine.Log.IsInfoEnabled)
                 {
                     _engine.Log.Info($"{ToString()}: Got a negotiation request with identical PrevLogTerm will continue to steady state");
                 }
+
+                if (negotiation.PrevLogTerm == _term && FollowerNames.Contains(ToString()) == false)
+                {
+                    using (context.OpenReadTransaction())
+                    {
+                        foreach (var log in _engine.LogHistory.GetLogByIndex(context, negotiation.PrevLogIndex))
+                        {
+                            Console.WriteLine($"Identical!? {context.ReadObject(log, "asd")}");
+                        }
+                    }
+                }
+
                 // this (or the negotiation above) completes the negotiation process
                 _connection.Send(context, new LogLengthNegotiationResponse
                 {
@@ -435,6 +449,9 @@ namespace Raven.Server.Rachis
                     LastLogIndex = negotiation.PrevLogIndex
                 });
             }
+            FollowerNames.TryAdd(ToString());
+
+
             _debugRecorder.Record("Matching Negotiation is over, waiting for snapshot");
             _engine.Timeout.Defer(_connection.Source);
 
@@ -811,6 +828,7 @@ namespace Raven.Server.Rachis
                     // our appended entries has been diverged, same index with different terms.
                     var msg = $"Our appended entries has been diverged, same index with different terms. " +
                               $"My index/term {midpointIndex}/{midpointTerm}, while yours is {negotiation.PrevLogIndex}/{negotiation.PrevLogTerm}.";
+
                     if (_engine.Log.IsInfoEnabled)
                     {
                         _engine.Log.Info($"{ToString()}: {msg}");

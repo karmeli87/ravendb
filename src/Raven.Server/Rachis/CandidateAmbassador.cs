@@ -145,13 +145,14 @@ namespace Raven.Server.Rachis
                         using (_engine.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
                         {
                             ClusterTopology topology;
-                            long lastLogIndex;
-                            long lastLogTerm;
+                            long lastLogIndex, lastCommittedIndex;
+                            long lastLogTerm, lastCommittedTerm;
                             using (context.OpenReadTransaction())
                             {
                                 topology = _engine.GetTopology(context);
                                 lastLogIndex = _engine.GetLastEntryIndex(context);
                                 lastLogTerm = _engine.GetTermForKnownExisting(context, lastLogIndex);
+                                _engine.GetLastCommitIndex(context, out lastCommittedIndex, out lastCommittedTerm);
                             }
 
                             Debug.Assert(topology.TopologyId != null);
@@ -183,7 +184,9 @@ namespace Raven.Server.Rachis
                                         IsForcedElection = false,
                                         IsTrialElection = true,
                                         LastLogIndex = lastLogIndex,
-                                        LastLogTerm = lastLogTerm
+                                        LastLogTerm = lastLogTerm,
+                                        LastCommittedIndex = lastCommittedIndex,
+                                        LastCommittedTerm = lastCommittedTerm
                                     });
 
                                     rvr = _connection.Read<RequestVoteResponse>(context);
@@ -244,7 +247,9 @@ namespace Raven.Server.Rachis
                                     IsForcedElection = _candidate.IsForcedElection,
                                     IsTrialElection = false,
                                     LastLogIndex = lastLogIndex,
-                                    LastLogTerm = lastLogTerm
+                                    LastLogTerm = lastLogTerm,
+                                    LastCommittedIndex = lastCommittedIndex,
+                                    LastCommittedTerm = lastCommittedTerm
                                 });
 
                                 rvr = _connection.Read<RequestVoteResponse>(context);

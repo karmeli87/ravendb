@@ -278,6 +278,8 @@ namespace Raven.Server.Rachis
             }
         }
 
+        private long _noopIndex;
+
         /// <summary>
         /// This is expected to run for a long time, and it cannot leak exceptions
         /// </summary>
@@ -295,15 +297,22 @@ namespace Raven.Server.Rachis
 
                 var noopCmd = new DynamicJsonValue
                 {
-                    ["Command"] = "noop"
+                    ["Type"] = $"Noop for {_engine.Tag} in term {Term}",
+                    ["Command"] = "noop",
+                    [nameof(CommandBase.UniqueRequestId)] = Guid.NewGuid().ToString()
                 };
+
+
                 using (_engine.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
                 using (var tx = context.OpenWriteTransaction())
                 using (var cmd = context.ReadObject(noopCmd, "noop-cmd"))
                 {
-                    _engine.InsertToLeaderLog(context, Term, cmd, RachisEntryFlags.Noop);
+                    _noopIndex = _engine.InsertToLeaderLog(context, Term, cmd, RachisEntryFlags.Noop);
                     tx.Commit();
                 }
+
+                Console.WriteLine($"{ToString()} noop at {_noopIndex}");
+
                 _newEntry.Set(); //This is so the noop would register right away
                 while (_running)
                 {
@@ -469,11 +478,18 @@ namespace Raven.Server.Rachis
 
                 changedFromLeaderElectToLeader = _engine.TakeOffice();
 
+                if (Term != _engine.CurrentTerm)
+                {
+                    Console.WriteLine($"------------ {ToString()} Holyyyyyy shittttt, the real term is {_engine.CurrentTerm}");
+                }
+
                 maxIndexOnQuorum = _engine.Apply(context, maxIndexOnQuorum, this, Stopwatch.StartNew());
 
                 context.Transaction.Commit();
                 _lastCommit = maxIndexOnQuorum;
             }
+
+            Console.WriteLine($"{ToString()} committed upto {_lastCommit}");
 
             foreach (var kvp in _entries)
             {

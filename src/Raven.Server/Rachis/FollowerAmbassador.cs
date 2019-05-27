@@ -274,7 +274,10 @@ namespace Raven.Server.Rachis
                                             entries.Add(entry);
                                             totalSize += entry.Size;
                                             if (totalSize > Constants.Size.Megabyte)
+                                            {
+                                                Console.WriteLine($"****** {ToString()} {totalSize} ({_followerMatchIndex + entries.Count} / {_engine.GetLastCommitIndex(context)})******");
                                                 break;
+                                            }
                                         }
 
                                         appendEntries = new AppendEntries
@@ -303,7 +306,7 @@ namespace Raven.Server.Rachis
                                 {
                                     _engine.Log.Info($"FollowerAmbassador for {_tag}: sending {entries.Count} entries to {_tag}"
 #if DEBUG
-                                                     + $" [{string.Join(" ,", entries.Select(x => x.ToString()))}]"
+                                                 //    + $" [{string.Join(" ,", entries.Select(x => x.ToString()))}]"
 #endif
                                     );
                                 }
@@ -366,6 +369,7 @@ namespace Raven.Server.Rachis
                                 }
 
                                 UpdateLastMatchFromFollower(aer.LastLogIndex);
+                              //  Console.WriteLine($"{ToString()} {aer.LastLogIndex}");
                             }
 
                             if (_running == false)

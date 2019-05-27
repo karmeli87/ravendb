@@ -17,6 +17,8 @@
         public bool IsForcedElection { get; set; }
         public string Source { get; set; }
         public ElectionResult ElectionResult { get; set; }
+        public long LastCommittedTerm { get; set; }
+        public long LastCommittedIndex { get; set; }
     }
 
     public class RequestVoteResponse
