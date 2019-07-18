@@ -79,6 +79,7 @@ namespace Voron.Data.RawData
                     continue;
                 // we have space, but we need to defrag
                 var pageHeader = PageHeaderFor(_sectionHeader->PageNumber + i + 1);
+
                 pageHeader = DefragPage(pageHeader);
 
                 id = (pageHeader->PageNumber) * Constants.Storage.PageSize + pageHeader->NextAllocation;
@@ -167,6 +168,18 @@ namespace Voron.Data.RawData
                     }
                     var prevId = (pageHeader->PageNumber) * Constants.Storage.PageSize + pos;
                     var newId = (pageHeader->PageNumber) * Constants.Storage.PageSize + pageHeader->NextAllocation;
+
+                    var newIdPage = newId / Constants.Storage.PageSize;
+
+                    if (newIdPage != pageHeader->PageNumber)
+                    {
+                        Console.WriteLine($"WTF! {newIdPage} != {pageHeader->PageNumber}");
+                    }
+
+                    if (prevId == 21541937)
+                    {
+                        Console.WriteLine("Defrag "+pageHeader->PageNumber);
+                    }
                     if (prevId != newId)
                     {
                         OnDataMoved(prevId, newId, tmp.TempPagePointer + pos + sizeof(RawDataEntrySizes), oldSize->UsedSize);

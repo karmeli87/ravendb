@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Sparrow;
@@ -105,6 +106,11 @@ namespace Voron.Data.RawData
 
                     if (posInPage >= pageHeader->NextAllocation)
                         break;
+
+                    if (currentId == 21541937)
+                    {
+                        Console.WriteLine($"Found in page {pageHeader->PageNumber} ({pageHeader->PageNumberInSection})");
+                    }
 
                     ids.Add(currentId);
 
@@ -271,6 +277,12 @@ namespace Voron.Data.RawData
             if (_tx.Flags == TransactionFlags.Read)
                 ThrowReadOnlyTransaction(id);
 
+            if (id == 21540355)
+            {
+                Debugger.Launch();
+                Console.WriteLine("Freeing...");
+            }
+
             var posInPage = (int)(id % Constants.Storage.PageSize);
             var pageNumberInSection = (id - posInPage) / Constants.Storage.PageSize;
             var pageHeader = PageHeaderFor(pageNumberInSection);
@@ -309,6 +321,11 @@ namespace Voron.Data.RawData
             var sizeFreed = sizes->AllocatedSize + (sizeof(short) * 2);
             _sectionHeader->AllocatedSize -= sizeFreed;
             AvailableSpace[pageHeader->PageNumberInSection] += (ushort)sizeFreed;
+
+            if (id == 21540355)
+            {
+                Console.WriteLine("Freed");
+            }
 
             return Density;
         }

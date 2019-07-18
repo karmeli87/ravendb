@@ -71,6 +71,22 @@ namespace Voron.Data.Tables
             }
 #endif
             var tvr = new TableValueReader(data, size);
+
+            var idBytes = tvr.Read(0, out var idSize);
+            var id = Encodings.Utf8.GetString(idBytes, idSize);
+
+
+           
+
+            if (id == "user2.57c423e9-33a4-45a6-8fa1-e64c79989eaa/e7e68925-1d18-4c9a-aa40-ea2134ed9a83")
+            {
+                if (previousId == 21541937)
+                {
+                    Debugger.Launch();
+                }
+                Console.WriteLine($"Moving... from {previousId} to {newId} {Environment.StackTrace}");
+            }
+
             DeleteValueFromIndex(previousId, ref tvr);
             InsertIndexValuesFor(newId, ref tvr);
         }
@@ -338,6 +354,15 @@ namespace Voron.Data.Tables
                 return;
 
             var tvr = new TableValueReader(ptr, size);
+
+            var idBytes = tvr.Read(0, out var idSize);
+            var docId = Encodings.Utf8.GetString(idBytes, idSize);
+
+            if (docId == "user2.57c423e9-33a4-45a6-8fa1-e64c79989eaa/e7e68925-1d18-4c9a-aa40-ea2134ed9a83")
+            {
+                Console.WriteLine($"Deleting... from {id}");
+            }
+
             DeleteValueFromIndex(id, ref tvr);
 
             var largeValue = (id % Constants.Storage.PageSize) == 0;
@@ -392,6 +417,11 @@ namespace Voron.Data.Tables
                 var pos = ActiveDataSmallSection.DirectRead(idToMove, out int itemSize);
                 var newId = AllocateFromSmallActiveSection(null, itemSize);
 
+                if (idToMove == 21541937)
+                {
+                    Console.WriteLine("Moving...");
+                }
+
                 OnDataMoved(idToMove, newId, pos, itemSize);
 
                 if (ActiveDataSmallSection.TryWriteDirect(newId, itemSize, out byte* writePos) == false)
@@ -405,6 +435,7 @@ namespace Voron.Data.Tables
 
         private void ThrowInvalidAttemptToRemoveValueFromIndexAndNotFindingIt(long id, Slice indexDefName)
         {
+            Debugger.Launch();
             throw new VoronErrorException(
                 $"Invalid index {indexDefName} on {Name}, attempted to delete value but the value from {id} wasn\'t in the index");
         }
