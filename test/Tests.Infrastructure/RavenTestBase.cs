@@ -270,25 +270,29 @@ namespace FastTests
                             Servers.ForEach(server => ApplySkipDrainAllRequestsToDatabase(server, name));
                         }
                     }
-
+                    var ae = new ExceptionAggregator($"Dispose of {name} failed");
                     store.BeforeDispose += (sender, args) =>
                     {
-                        if (CreatedStores.TryRemove(store) == false)
-                            return; // can happen if we are wrapping the store inside sharded one
-
-                        DeleteDatabaseResult result = null;
-                        if (options.DeleteDatabaseOnDispose)
+                        ae.Execute(() =>
                         {
-                            result = DeleteDatabase(options, serverToUse, name, hardDelete, store);
-                        }
+                            if (CreatedStores.TryRemove(store) == false)
+                                return; // can happen if we are wrapping the store inside sharded one
 
-                        if (IsGlobalOrLocalServer(serverToUse) == false && 
-                            result !=null)
-                        {
-                            var timeout = TimeSpan.FromMinutes(Debugger.IsAttached ? 5 : 1);
-                            AsyncHelpers.RunSync(async () => await WaitForRaftIndexToBeAppliedInCluster(result.RaftCommandIndex, timeout));
-                        }
+                            DeleteDatabaseResult result = null;
+                            if (options.DeleteDatabaseOnDispose)
+                            {
+                                result = DeleteDatabase(options, serverToUse, name, hardDelete, store);
+                            }
+
+                            if (IsGlobalOrLocalServer(serverToUse) == false && 
+                                result !=null)
+                            {
+                                var timeout = TimeSpan.FromMinutes(Debugger.IsAttached ? 5 : 1);
+                                AsyncHelpers.RunSync(async () => await WaitForRaftIndexToBeAppliedInCluster(result.RaftCommandIndex, timeout));
+                            }
+                        });
                     };
+                    store.AfterDispose += (sender, args) => ae.ThrowIfNeeded(); 
                     CreatedStores.Add(store);
 
                     return store;
