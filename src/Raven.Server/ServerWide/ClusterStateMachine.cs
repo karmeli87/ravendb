@@ -300,6 +300,7 @@ namespace Raven.Server.ServerWide
                     case nameof(SetIndexLockCommand):
                     case nameof(SetIndexPriorityCommand):
                     case nameof(SetIndexStateCommand):
+                    case nameof(EditTimeSeriesConfigurationCommand):
                     case nameof(EditRevisionsConfigurationCommand):
                     case nameof(EditRevisionsForConflictsConfigurationCommand):
                     case nameof(UpdatePeriodicBackupCommand):
@@ -1873,6 +1874,7 @@ namespace Raven.Server.ServerWide
                 case nameof(SetIndexPriorityCommand):
                 case nameof(SetIndexStateCommand):
                 case nameof(EditRevisionsConfigurationCommand):
+                case nameof(EditTimeSeriesConfigurationCommand):
                 case nameof(EditRevisionsForConflictsConfigurationCommand):
                 case nameof(EditExpirationCommand):
                 case nameof(EditRefreshCommand):
