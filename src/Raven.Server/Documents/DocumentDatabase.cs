@@ -27,6 +27,7 @@ using Raven.Server.Documents.Queries;
 using Raven.Server.Documents.Replication;
 using Raven.Server.Documents.Subscriptions;
 using Raven.Server.Documents.TcpHandlers;
+using Raven.Server.Documents.TimeSeries;
 using Raven.Server.Json;
 using Raven.Server.NotificationCenter.Notifications;
 using Raven.Server.NotificationCenter.Notifications.Details;
@@ -203,6 +204,7 @@ namespace Raven.Server.Documents
         public DocumentsStorage DocumentsStorage { get; private set; }
 
         public ExpiredDocumentsCleaner ExpiredDocumentsCleaner { get; private set; }
+        public TimeSeriesPolicyRetentionRunner TimeSeriesPolicyRetentionRunner { get; private set; }
 
         public PeriodicBackupRunner PeriodicBackupRunner { get; private set; }
 
@@ -1324,6 +1326,7 @@ namespace Raven.Server.Documents
             StudioConfiguration = record.Studio;
             DocumentsStorage.RevisionsStorage.InitializeFromDatabaseRecord(record);
             ExpiredDocumentsCleaner = ExpiredDocumentsCleaner.LoadConfigurations(this, record, ExpiredDocumentsCleaner);
+            TimeSeriesPolicyRetentionRunner = TimeSeriesPolicyRetentionRunner.LoadConfigurations(this, record, TimeSeriesPolicyRetentionRunner);
             PeriodicBackupRunner.UpdateConfigurations(record);
         }
 

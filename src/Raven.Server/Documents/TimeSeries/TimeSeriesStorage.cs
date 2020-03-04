@@ -7,6 +7,8 @@ using System.Text;
 using Raven.Client;
 using Raven.Client.Documents.Changes;
 using Raven.Client.Documents.Operations.TimeSeries;
+using Raven.Client.Documents.Queries.TimeSeries;
+using Raven.Server.Documents.Queries.AST;
 using Raven.Server.Documents.Replication.ReplicationItems;
 using Raven.Server.ServerWide.Context;
 using Raven.Server.Utils;
@@ -521,6 +523,118 @@ namespace Raven.Server.Documents.TimeSeries
             }
         }
 
+        public DateTime GetDateTimeByAggregationType(DateTime start, DateTime end, AggregationType type)
+        {
+            switch (type)
+            {
+                case AggregationType.First:
+                    return start;
+                case AggregationType.Min:
+                case AggregationType.Max:
+                case AggregationType.Last:
+                case AggregationType.Sum:
+                case AggregationType.Count:
+                    return end;
+                case AggregationType.Mean:
+                case AggregationType.Avg:
+                    return new DateTime(checked(start.Ticks + end.Ticks) / 2);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
+        }
+
+        public List<Reader.SingleResult> GetAggregatedValues(Reader reader, DateTime start, TimeSpan rangeGroup, AggregationType type)
+        {
+            var numberOfValues = 1;
+            var aggStates = new TimeSeriesAggregation[numberOfValues];
+            for (var index = 0; index < aggStates.Length; index++)
+            {
+                aggStates[index] = new TimeSeriesAggregation(type);
+            }
+
+            var results = new List<Reader.SingleResult>();
+            DateTime next = default;
+            var rangeSpec = new TimeSeriesFunction.RangeGroup {Ticks = rangeGroup.Ticks};
+
+            foreach (var it in reader.SegmentsOrValues())
+            {
+                if (it.IndividualValues != null)
+                {
+                    AggregateIndividualItems(it.IndividualValues);
+                }
+                else
+                {
+                    //We might need to close the old aggregation range and start a new one
+                    MaybeMoveToNextRange(it.Segment.Start);
+
+                    // now we need to see if we can consume the whole segment, or 
+                    // if the range it cover needs to be broken up to multiple ranges.
+                    // For example, if the segment covers 3 days, but we have group by 1 hour,
+                    // we still have to deal with the individual values
+                    if (it.Segment.End > next)
+                    {
+                        AggregateIndividualItems(it.Segment.Values);
+                    }
+                    else
+                    {
+                        var span = it.Segment.Summary.Span;
+                        for (int i = 0; i < aggStates.Length; i++)
+                        {
+                            aggStates[i].Segment(span);
+                        }
+                    }
+                }
+            }
+
+            if (aggStates[0].Any)
+            {
+                results.Add(new Reader.SingleResult
+                {
+                    Timestamp = GetDateTimeByAggregationType(start, next, type), 
+                    Values = new Memory<double>(aggStates[0].GetFinalValues().Cast<double>().ToArray()),
+                    Status = TimeSeriesValuesSegment.Live,
+                    // Tag = ""
+                });
+            }
+
+            return results;
+
+            void MaybeMoveToNextRange(DateTime ts)
+            {
+                if (ts < next)
+                    return;
+
+                if (aggStates[0].Any)
+                {
+                    results.Add(new Reader.SingleResult
+                    {
+                        Timestamp = GetDateTimeByAggregationType(start, next, type), 
+                        Values = new Memory<double>(aggStates[0].GetFinalValues().Cast<double>().ToArray()),
+                        Status = TimeSeriesValuesSegment.Live,
+                        // Tag = ""
+                    });
+                }
+
+                start = rangeSpec.GetRangeStart(ts);
+                next = rangeSpec.GetNextRangeStart(start);
+
+                aggStates = new TimeSeriesAggregation[numberOfValues];
+            }
+
+            void AggregateIndividualItems(IEnumerable<Reader.SingleResult> items)
+            {
+                foreach (var cur in items)
+                {
+                    MaybeMoveToNextRange(cur.Timestamp);
+
+                    for (int i = 0; i < aggStates.Length; i++)
+                    {
+                        aggStates[i].Step(cur.Values.Span);
+                    }
+                }
+            }
+        }
+
         public Reader GetReader(DocumentsOperationContext context, string documentId, string name, DateTime from, DateTime to, TimeSpan? offset = null)
         {
             return new Reader(context, documentId, name, from, to, offset);
@@ -878,6 +992,7 @@ namespace Raven.Server.Documents.TimeSeries
 
                 TimeSeriesValuesSegment.ParseTimeSeriesKey(key, context, out var docId, out var name);
                 UpdateTotalCountStats(context, docId, name, segment.NumberOfLiveEntries);
+                _documentDatabase.TimeSeriesPolicyRetentionRunner?.MarkForRollup(context, collectionName.Name, name, newEtag, baseline);
 
                 using (Slice.From(context.Allocator, changeVector, out Slice cv))
                 using (DocumentIdWorker.GetStringPreserveCase(context, collectionName.Name, out var collectionSlice))
@@ -1182,6 +1297,7 @@ namespace Raven.Server.Documents.TimeSeries
                 EnsureSegmentSize(newSegment.NumberOfBytes);
 
                 _tss.UpdateTotalCountStats(_context, _docId, _name, newSegment.NumberOfLiveEntries);
+                _tss._documentDatabase.TimeSeriesPolicyRetentionRunner?.MarkForRollup(_context, _collection.Name, _name, _currentEtag, BaselineDate);
 
                 using (Slice.From(_context.Allocator, _currentChangeVector, out Slice cv))
                 using (DocumentIdWorker.GetStringPreserveCase(_context, _collection.Name, out var collectionSlice))

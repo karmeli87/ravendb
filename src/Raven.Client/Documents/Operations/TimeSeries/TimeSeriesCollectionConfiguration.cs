@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Raven.Client.Documents.Queries.TimeSeries;
 using Sparrow.Json.Parsing;
 
 namespace Raven.Client.Documents.Operations.TimeSeries
@@ -20,6 +21,29 @@ namespace Raven.Client.Documents.Operations.TimeSeries
                 return;
 
             RollupPolicies.Sort(TimeSeriesDownSamplePolicyComparer.Instance);
+        }
+
+        internal RollupPolicy GetPolicy(string name)
+        {
+            if (name.Contains(TimeSeriesConfiguration.TimeSeriesRollupSeparator) == false)
+                return RollupPolicy.RawPolicy;
+
+            return RollupPolicies.SingleOrDefault(p => name.Contains(p.Name));
+        }
+
+        internal RollupPolicy GetNextPolicy(RollupPolicy policy)
+        {
+            if (policy == RollupPolicy.RawPolicy)
+                return RollupPolicies[0];
+
+            var current = RollupPolicies.FindIndex(p => p == policy);
+            if (current < 0)
+                return null;
+
+            if (current == RollupPolicies.Count)
+                return RollupPolicy.AfterAllPolices;
+
+            return RollupPolicies[current + 1];
         }
 
         public DynamicJsonValue ToJson()
@@ -50,17 +74,29 @@ namespace Raven.Client.Documents.Operations.TimeSeries
         /// </summary>
         public TimeSpan AggregateBy;
 
+        public AggregationType Type;
+
+        // The timestamp location of the rollup policy is defined by the type
+        // start-point when First
+        // mid-point   when Avg, Mean
+        // end-point   when Sum, Count, Min, Max, Last
+        // TODO: consider Continuous Query approach
+
+        internal static RollupPolicy AfterAllPolices = new RollupPolicy(TimeSpan.MinValue, TimeSpan.MinValue);
+        internal static RollupPolicy RawPolicy = new RollupPolicy(TimeSpan.MinValue, TimeSpan.MinValue);
+
         private RollupPolicy()
         {
             
         }
 
-        public RollupPolicy(TimeSpan retentionTime, TimeSpan aggregateBy)
+        public RollupPolicy(TimeSpan retentionTime, TimeSpan aggregateBy, AggregationType type = AggregationType.Avg)
         {
             RetentionTime = retentionTime;
             AggregateBy = aggregateBy;
+            Type = type;
 
-            Name = $"KeepFor{RetentionTime}AggregatedBy{aggregateBy}";
+            Name = $"KeepFor{RetentionTime}AggregatedEvery{AggregateBy}To{Type}";
         }
 
         public DynamicJsonValue ToJson()

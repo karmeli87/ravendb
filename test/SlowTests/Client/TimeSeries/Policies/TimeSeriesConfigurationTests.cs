@@ -60,5 +60,31 @@ namespace SlowTests.Client.TimeSeries.Policies
                 Assert.Equal(TimeSpan.FromDays(1), policies[3].AggregateBy);
             }
         }
+
+        [Fact]
+        public async Task CanExecuteRollup()
+        {
+            using (var store = GetDocumentStore())
+            {
+                var config = new TimeSeriesConfiguration
+                {
+                    Collections = new Dictionary<string, TimeSeriesCollectionConfiguration>
+                    {
+                        ["Users"] = new TimeSeriesCollectionConfiguration
+                        {
+                            RollupPolicies = new List<RollupPolicy>
+                            {
+                                new RollupPolicy(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(1)),
+                            },
+                            RawDataRetentionTime = TimeSpan.FromHours(96)
+                        },
+                    }
+                };
+                await store.Maintenance.SendAsync(new ConfigureTimeSeriesOperation(config));
+
+                
+            }
+        }
+
     }
 }
