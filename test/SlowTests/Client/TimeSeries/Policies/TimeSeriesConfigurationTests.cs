@@ -872,10 +872,82 @@ namespace SlowTests.Client.TimeSeries.Policies
             }
         }
 
+         [Fact]
+        public async Task RapidRetention()
+        {
+            var cluster = await CreateRaftCluster(3);
+            using (var store = GetDocumentStore(new Options
+            {
+                Server = cluster.Leader,
+                ReplicationFactor = 3
+            }))
+            {
+                var retention = TimeSpan.FromSeconds(600);
+                var raw = new RawTimeSeriesPolicy(retention);
+                var config = new TimeSeriesConfiguration
+                {
+                    Collections = new Dictionary<string, TimeSeriesCollectionConfiguration>
+                    {
+                        ["Users"] = new TimeSeriesCollectionConfiguration
+                        {
+                            RawPolicy = raw,
+                            Policies = new List<TimeSeriesPolicy>
+                            {
+                                         new TimeSeriesPolicy("asd", TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(1200))
+                            }
+                        },
+                    },
+                    PolicyCheckFrequency = TimeSpan.FromSeconds(1.5)
+                };
+
+                var now = DateTime.UtcNow;
+                var baseline = now.Add(- retention * 3);
+                var total = retention.TotalMilliseconds * 3 / 10;
+
+                using (var session = store.OpenSession())
+                {
+                    session.Store(new User {Name = "Karmel"}, "users/karmel");
+
+                    for (int i = 0; i <= total; i++)
+                    {
+                        session.TimeSeriesFor("users/karmel", "Heartrate")
+                            .Append(baseline.AddMilliseconds(i * 10), new[] {29d * i, i}, "watches/fitbit");
+                    }
+                    session.SaveChanges();
+                }
+
+                await store.Maintenance.SendAsync(new ConfigureTimeSeriesOperation(config));
+                while (true)
+                {
+                    var timesSeriesDetails = store.Operations.Send(
+                        new GetTimeSeriesOperation("users/karmel", "Heartrate", null, 0, 1));
+                    var measures = timesSeriesDetails.Values["Heartrate"][0];
+                    if (measures.Entries.Length == 0)
+                        break;
+
+                    var first = measures.Entries[0];
+                    Assert.Equal(first.Timestamp, measures.From);
+                   // Assert.Equal(measures.Entries.Length, timesSeriesDetails.TotalResults);
+
+                    timesSeriesDetails = store.Operations.Send(
+                        new GetTimeSeriesOperation("users/karmel", "Heartrate", null, timesSeriesDetails.TotalResults - 1, 1));
+                    measures = timesSeriesDetails.Values["Heartrate"][0];
+                    if (measures.Entries.Length == 0)
+                        continue;
+
+                    var last = measures.Entries[0];
+                    Assert.Equal(last.Timestamp, measures.To);
+                   // Assert.Equal(measures.Entries.Length, timesSeriesDetails.TotalResults);
+                }
+            }
+        }
+
+
+
         [Fact]
         public async Task FullRetentionAndRollupInACluster()
         {
-            var cluster = await CreateRaftCluster(3);
+            var cluster = await CreateRaftCluster(3, watcherCluster: true);
             using (var store = GetDocumentStore(new Options
             {
                 Server = cluster.Leader,
@@ -903,7 +975,7 @@ namespace SlowTests.Client.TimeSeries.Policies
                             }
                         },
                     },
-                    PolicyCheckFrequency = TimeSpan.FromSeconds(1)
+                    PolicyCheckFrequency = TimeSpan.FromSeconds(5)
                 };
 
                 var now = DateTime.UtcNow;

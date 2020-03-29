@@ -130,7 +130,7 @@ namespace Raven.Server.Documents.Handlers
             }
 
             using (ContextPool.AllocateOperationContext(out DocumentsOperationContext context))
-            using (context.OpenReadTransaction())
+            using (context.OpenWriteTransaction())
             {
                 var ranges = GetTimeSeriesRangeResults(context, documentId, name, fromList, toList, start, pageSize);
 
@@ -220,11 +220,13 @@ namespace Raven.Server.Documents.Handlers
                 ComputeHttpEtags.HashChangeVector(state, segmentResult?.ChangeVector);
             }
 
+            var stats = context.DocumentDatabase.DocumentsStorage.TimeSeriesStorage.Stats.GetStats(context, docId, name);
+
             return new TimeSeriesRangeResult
             {
                 Name = name,
-                From = from,
-                To = to,
+                From = stats.Start,
+                To = stats.End,
                 Entries = values.ToArray(),
                 Hash = ComputeHttpEtags.FinalizeHash(size, state)
             };
