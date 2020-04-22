@@ -33,7 +33,7 @@ namespace SlowTests.Client.TimeSeries
 
                     using (var timeSeriesBulkInsert = bulkInsert.TimeSeriesFor(documentId, "Heartrate"))
                     {
-                        timeSeriesBulkInsert.Append(baseline.AddMinutes(1), 59d, "watches/fitbit");
+                        timeSeriesBulkInsert.Append(baseline.AddMinutes(1), 59.123, "watches/fitbit");
                     }
                 }
 
@@ -43,7 +43,7 @@ namespace SlowTests.Client.TimeSeries
                         .Get(DateTime.MinValue, DateTime.MaxValue)
                         .Single();
 
-                    Assert.Equal(new[] { 59d }, val.Values);
+                    Assert.Equal(59.123, val.Value);
                     Assert.Equal("watches/fitbit", val.Tag);
                     Assert.Equal(baseline.AddMinutes(1), val.Timestamp);
                 }

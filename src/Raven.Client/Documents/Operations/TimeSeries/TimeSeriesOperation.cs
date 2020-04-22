@@ -106,7 +106,7 @@ namespace Raven.Client.Documents.Operations.TimeSeries
                     }
                     else
                     {
-                        doubleValues[i] = (double)obj;
+                        doubleValues[i] = Convert.ToDouble(bjro[i + 2]);
                     }
                 }
 
