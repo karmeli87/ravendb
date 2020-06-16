@@ -165,7 +165,10 @@ namespace Raven.Server.Documents
                 var countersItem  = CreateReplicationBatchItem(context, result);
 
                 if (caseInsensitiveNames)
+                {
                     yield return countersItem;
+                    continue;
+                }
 
                 // 4.2 replication destination
                 // need to change the CounterGroup document to match 4.2 format  
@@ -1633,6 +1636,7 @@ namespace Raven.Server.Documents
             var count = counterToDelete.Length / SizeOfCounterValues;
             var sb = new StringBuilder();
 
+            long newEtag = -1;
             for (int i = 0; i < count; i++)
             {
                 if (i > 0)
@@ -1652,15 +1656,22 @@ namespace Raven.Server.Documents
                     continue;
                 }
 
-                var newEtag = _documentDatabase.DocumentsStorage.GenerateNextEtag();
+                newEtag = _documentDatabase.DocumentsStorage.GenerateNextEtag();
                 sb.Append(_documentDatabase.DbBase64Id)
                     .Append(":")
                     .Append(newEtag);
             }
 
-            if (count < dbIdIndex)
+            if (newEtag == -1)
             {
-                var newEtag = _documentDatabase.DocumentsStorage.GenerateNextEtag();
+                // add local part to delete change vector
+
+                if (count > 0)
+                {
+                    sb.Append(", ");
+                }
+
+                newEtag = _documentDatabase.DocumentsStorage.GenerateNextEtag();
                 sb.Append(_documentDatabase.DbBase64Id)
                     .Append(":")
                     .Append(newEtag);
