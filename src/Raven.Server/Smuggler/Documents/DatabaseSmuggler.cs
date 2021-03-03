@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Smuggler;
@@ -19,9 +22,64 @@ using Sparrow.Json;
 
 namespace Raven.Server.Smuggler.Documents
 {
+    public class ConcurrentSmuggler
+    {
+        private class SmugglerSources
+        {
+            private ISmugglerSource[] _sources;
+            private IDisposable[] _disposables;
+
+            public IDisposable Initialize(DatabaseSmugglerOptionsServerSide options, SmugglerResult result, out long buildVersion)
+            {
+                buildVersion = long.MaxValue;
+                for (var index = 0; index < _sources.Length; index++)
+                {
+                    var source = _sources[index];
+                    _disposables[index] = source.Initialize(options, result, out var version);
+                    buildVersion = Math.Min(version, buildVersion);
+                }
+
+                return new DisposableAction(() =>
+                {
+                    foreach (var source in _disposables)
+                    {
+                        source.Dispose();
+                    }
+                });
+            }
+        }
+
+        private SmugglerSources _sources;
+
+        public SmugglerResult Execute()
+        {
+            var result = _result ?? new SmugglerResult();
+
+            using (_patcher?.Initialize())
+            using (_sources.Initialize(_options, result, out long buildVersion))
+            using (_destination.Initialize(_options, result, buildVersion))
+            {
+                ModifyV41OperateOnTypes(buildVersion, isLastFile: true);
+
+                var buildType = BuildVersion.Type(buildVersion);
+                var currentType = _source.GetNextType();
+                while (currentType != DatabaseItemType.None)
+                {
+                    ProcessType(currentType, result, buildType, ensureStepsProcessed: true);
+
+                    currentType = _source.GetNextType();
+                }
+
+                EnsureProcessed(result);
+
+                return result;
+            }
+        }
+    }
+
+
     public class DatabaseSmuggler
     {
-        private readonly DocumentDatabase _database;
         private readonly ISmugglerSource _source;
         private readonly ISmugglerDestination _destination;
         private readonly DatabaseSmugglerOptionsServerSide _options;
@@ -52,7 +110,6 @@ namespace Raven.Server.Smuggler.Documents
             DatabaseSmugglerOptionsServerSide options = null, SmugglerResult result = null, Action<IOperationProgress> onProgress = null,
             CancellationToken token = default)
         {
-            _database = database;
             _source = source;
             _destination = destination;
             _options = options ?? new DatabaseSmugglerOptionsServerSide();
@@ -69,7 +126,7 @@ namespace Raven.Server.Smuggler.Documents
             _time = time;
             _onProgress = onProgress ?? (progress => { });
         }
-
+        
         /// <summary>
         /// isLastFile param true by default to correctly restore identities and compare exchange from V41 ravendbdump file.
         /// </summary>
@@ -102,6 +159,50 @@ namespace Raven.Server.Smuggler.Documents
 
                 return result;
             }
+        }
+
+        public class SmugglerSources : IEnumerable<ISmugglerSource>
+        {
+            private ISmugglerSource[] _sources;
+            private IDisposable[] _disposables;
+
+            public IDisposable Initialize(DatabaseSmugglerOptionsServerSide options, SmugglerResult result, out long buildVersion)
+            {
+                buildVersion = long.MaxValue;
+                for (var index = 0; index < _sources.Length; index++)
+                {
+                    var source = _sources[index];
+                    _disposables[index] = source.Initialize(options, result, out var version);
+                    buildVersion = Math.Min(version, buildVersion);
+                }
+
+                return new DisposableAction(() =>
+                {
+                    foreach (var source in _disposables)
+                    {
+                        source.Dispose();
+                    }
+                });
+            }
+
+            public IEnumerator<ISmugglerSource> GetEnumerator() => (IEnumerator<ISmugglerSource>)_sources.GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        public SmugglerResult ExecuteMany(SmugglerSources sources)
+        {
+            var result = _result ?? new SmugglerResult();
+
+            Debug.Assert(_patcher == null,"_patcher == null");
+
+            foreach (var source in sources)
+            {
+                var smuggler1 = new DatabaseSmuggler(null, source, _destination, _time, _options);
+                Task.Run(() => smuggler1.Execute(ensureStepsProcessed: true, isLastFile: true), _token);
+            }
+
+            return result;
         }
 
         private void ModifyV41OperateOnTypes(long buildVersion, bool isLastFile)
@@ -627,7 +728,7 @@ namespace Raven.Server.Smuggler.Documents
                     }
                     else
                     {
-                    result.Documents.ReadCount++;
+                        result.Documents.ReadCount++;
                     }
 
                     if (result.Documents.ReadCount % 1000 == 0)
@@ -777,8 +878,8 @@ namespace Raven.Server.Smuggler.Documents
         private SmugglerProgressBase.Counts ProcessCompareExchange(SmugglerResult result)
         {
             result.CompareExchange.Start();
-
-            using (_database.DocumentsStorage.ContextPool.AllocateOperationContext(out JsonOperationContext context))
+            
+            using (var context = JsonOperationContext.ShortTermSingleUse())
             using (var actions = _destination.CompareExchange(context))
             {
                 foreach (var kvp in _source.GetCompareExchangeValues())
@@ -970,7 +1071,7 @@ namespace Raven.Server.Smuggler.Documents
         {
             result.CompareExchangeTombstones.Start();
 
-            using (_database.DocumentsStorage.ContextPool.AllocateOperationContext(out JsonOperationContext context))
+            using (var context = JsonOperationContext.ShortTermSingleUse())
             using (var actions = _destination.CompareExchangeTombstones(context))
             {
                 foreach (var key in _source.GetCompareExchangeTombstones())

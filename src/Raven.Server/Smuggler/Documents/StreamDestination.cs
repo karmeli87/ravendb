@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using Microsoft.AspNetCore.Mvc;
 using Raven.Client;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations.Attachments;
@@ -26,19 +23,13 @@ using Raven.Client.Util;
 using Raven.Server.Config;
 using Raven.Server.Documents;
 using Raven.Server.Documents.Indexes;
-using Raven.Server.Documents.TimeSeries;
 using Raven.Server.Json;
 using Raven.Server.Routing;
 using Raven.Server.ServerWide.Commands;
-using Raven.Server.ServerWide.Context;
 using Raven.Server.Smuggler.Documents.Data;
 using Raven.Server.Web.System;
-using Sparrow.Binary;
 using Sparrow.Json;
 using Sparrow.Json.Parsing;
-using Sparrow.Server.Utils;
-using Voron;
-using Voron.Data.BTrees;
 
 namespace Raven.Server.Smuggler.Documents
 {
@@ -46,13 +37,13 @@ namespace Raven.Server.Smuggler.Documents
     {
         private readonly Stream _stream;
         private GZipStream _gzipStream;
-        private readonly DocumentsOperationContext _context;
-        private readonly DatabaseSource _source;
+        private readonly JsonOperationContext _context;
+        private readonly ISmugglerSource _source;
         private BlittableJsonTextWriter _writer;
         private DatabaseSmugglerOptionsServerSide _options;
         private Func<LazyStringValue, bool> _filterMetadataProperty;
 
-        public StreamDestination(Stream stream, DocumentsOperationContext context, DatabaseSource source)
+        public StreamDestination(Stream stream, JsonOperationContext context, ISmugglerSource source)
         {
             _stream = stream;
             _context = context;
@@ -684,7 +675,7 @@ namespace Raven.Server.Smuggler.Documents
 
         private class StreamCounterActions : StreamActionsBase, ICounterActions
         {
-            private readonly DocumentsOperationContext _context;
+            private readonly JsonOperationContext _context;
 
             public void WriteCounter(CounterGroupDetail counterDetail)
             {
@@ -725,12 +716,12 @@ namespace Raven.Server.Smuggler.Documents
                 throw new NotSupportedException("RegisterForDisposal is never used in StreamCounterActions. Shouldn't happen.");
             }
 
-            public StreamCounterActions(BlittableJsonTextWriter writer, DocumentsOperationContext context, string propertyName) : base(writer, propertyName)
+            public StreamCounterActions(BlittableJsonTextWriter writer, JsonOperationContext context, string propertyName) : base(writer, propertyName)
             {
                 _context = context;
             }
 
-            public DocumentsOperationContext GetContextForNewDocument()
+            public JsonOperationContext GetContextForNewDocument()
             {
                 _context.CachedProperties.NewDocument();
                 return _context;
@@ -744,7 +735,7 @@ namespace Raven.Server.Smuggler.Documents
 
         private class StreamTimeSeriesActions : StreamActionsBase, ITimeSeriesActions
         {
-            public StreamTimeSeriesActions(BlittableJsonTextWriter writer, DocumentsOperationContext context, string propertyName) : base(writer, propertyName)
+            public StreamTimeSeriesActions(BlittableJsonTextWriter writer, JsonOperationContext context, string propertyName) : base(writer, propertyName)
             {
             }
 
@@ -793,10 +784,10 @@ namespace Raven.Server.Smuggler.Documents
 
         private class StreamSubscriptionActions : StreamActionsBase, ISubscriptionActions
         {
-            private readonly DocumentsOperationContext _context;
+            private readonly JsonOperationContext _context;
             private readonly BlittableJsonTextWriter _writer;
 
-            public StreamSubscriptionActions(BlittableJsonTextWriter writer, DocumentsOperationContext context, string propertyName) : base(writer, propertyName)
+            public StreamSubscriptionActions(BlittableJsonTextWriter writer, JsonOperationContext context, string propertyName) : base(writer, propertyName)
             {
                 _context = context;
                 _writer = writer;
@@ -814,10 +805,10 @@ namespace Raven.Server.Smuggler.Documents
         
         private class StreamReplicationHubCertificateActions : StreamActionsBase, IReplicationHubCertificateActions
         {
-            private readonly DocumentsOperationContext _context;
+            private readonly JsonOperationContext _context;
             private readonly BlittableJsonTextWriter _writer;
 
-            public StreamReplicationHubCertificateActions(BlittableJsonTextWriter writer, DocumentsOperationContext context, string propertyName) : base(writer, propertyName)
+            public StreamReplicationHubCertificateActions(BlittableJsonTextWriter writer, JsonOperationContext context, string propertyName) : base(writer, propertyName)
             {
                 _context = context;
                 _writer = writer;
@@ -837,13 +828,13 @@ namespace Raven.Server.Smuggler.Documents
 
         private class StreamDocumentActions : StreamActionsBase, IDocumentActions
         {
-            private readonly DocumentsOperationContext _context;
-            private readonly DatabaseSource _source;
+            private readonly JsonOperationContext _context;
+            private readonly ISmugglerSource _source;
             private readonly DatabaseSmugglerOptionsServerSide _options;
             private readonly Func<LazyStringValue, bool> _filterMetadataProperty;
             private HashSet<string> _attachmentStreamsAlreadyExported;
 
-            public StreamDocumentActions(BlittableJsonTextWriter writer, DocumentsOperationContext context, DatabaseSource source, DatabaseSmugglerOptionsServerSide options, Func<LazyStringValue, bool> filterMetadataProperty, string propertyName)
+            public StreamDocumentActions(BlittableJsonTextWriter writer, JsonOperationContext context, ISmugglerSource source, DatabaseSmugglerOptionsServerSide options, Func<LazyStringValue, bool> filterMetadataProperty, string propertyName)
                 : base(writer, propertyName)
             {
                 _context = context;
@@ -960,7 +951,7 @@ namespace Raven.Server.Smuggler.Documents
                 }
             }
 
-            public DocumentsOperationContext GetContextForNewDocument()
+            public JsonOperationContext GetContextForNewDocument()
             {
                 _context.CachedProperties.NewDocument();
                 return _context;

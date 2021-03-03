@@ -19,6 +19,8 @@ using Raven.Server.Smuggler.Documents.Data;
 using Raven.Server.Smuggler.Migration.ApiKey;
 using Raven.Server.Utils;
 using Sparrow.Json;
+using Sparrow.Server;
+using Sparrow.Threading;
 
 namespace Raven.Server.Smuggler.Migration
 {
@@ -102,16 +104,17 @@ namespace Raven.Server.Smuggler.Migration
             }
         }
 
-        protected void WriteDocumentWithAttachment(IDocumentActions documentActions, DocumentsOperationContext context, Stream dataStream, string key, BlittableJsonReaderObject metadata)
+        protected void WriteDocumentWithAttachment(IDocumentActions documentActions, JsonOperationContext context, Stream dataStream, string key, BlittableJsonReaderObject metadata)
         {
             using (dataStream)
+            using (var allocator = new ByteStringContext(SharedMultipleUseFlag.None))
             {
                 var attachment = new DocumentItem.AttachmentStream
                 {
                     Stream = documentActions.GetTempStream()
                 };
 
-                var attachmentDetails = StreamSource.GenerateLegacyAttachmentDetails(context, dataStream, key, metadata, ref attachment);
+                var attachmentDetails = StreamSource.GenerateLegacyAttachmentDetails(context, allocator, dataStream, key, metadata, ref attachment);
 
                 var dummyDoc = new DocumentItem
                 {

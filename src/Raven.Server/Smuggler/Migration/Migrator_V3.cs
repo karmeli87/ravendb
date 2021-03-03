@@ -218,7 +218,7 @@ namespace Raven.Server.Smuggler.Migration
             return await response.Content.ReadAsStreamAsync();
         }
 
-        private BlittableJsonReaderObject GetCleanMetadata(BlittableJsonReaderObject metadata, DocumentsOperationContext context)
+        private BlittableJsonReaderObject GetCleanMetadata(BlittableJsonReaderObject metadata, JsonOperationContext context)
         {
             using (var old = metadata)
                 metadata = metadata.Clone(context);

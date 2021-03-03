@@ -261,7 +261,7 @@ namespace Raven.Server.Smuggler.Documents
                 return _command.AttachmentStreamsTempFile.StartNewStream();
             }
 
-            public DocumentsOperationContext GetContextForNewDocument()
+            public JsonOperationContext GetContextForNewDocument()
             {
                 _command.Context.CachedProperties.NewDocument();
                 return _command.Context;
@@ -1604,7 +1604,7 @@ namespace Raven.Server.Smuggler.Documents
                 _cmd = null;
             }
 
-            public DocumentsOperationContext GetContextForNewDocument()
+            public JsonOperationContext GetContextForNewDocument()
             {
                 _cmd.Context.CachedProperties.NewDocument();
                 return _cmd.Context;

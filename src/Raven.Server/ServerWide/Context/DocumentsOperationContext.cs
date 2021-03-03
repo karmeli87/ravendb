@@ -128,5 +128,7 @@ namespace Raven.Server.ServerWide.Context
             return Transaction?.InnerTransaction.LowLevelTransaction.Id !=
                    _documentDatabase.DocumentsStorage.Environment.CurrentReadTransactionId;
         }
+
+        public SharedMultipleUseFlag SharedLowMemoryFlag => LowMemoryFlag;
     }
 }

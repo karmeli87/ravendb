@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Operations.Counters;
@@ -38,7 +39,8 @@ namespace Raven.Server.Smuggler.Documents.Data
         long SkipType(DatabaseItemType type, Action<long> onSkipped, CancellationToken token);
 
         SmugglerSourceType GetSourceType();
-        
+
+        Stream GetAttachmentStream(LazyStringValue hash, out string tag);
     }
     public enum SmugglerSourceType
     {

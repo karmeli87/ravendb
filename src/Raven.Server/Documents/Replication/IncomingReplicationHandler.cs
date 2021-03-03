@@ -1032,7 +1032,6 @@ namespace Raven.Server.Documents.Replication
                     IsIncomingReplication = true;
 
                     var operationsCount = 0;
-
                     var database = _replicationInfo.DocumentDatabase;
                     var lastTransactionMarker = 0;
                     HashSet<LazyStringValue> docCountersToRecreate = null;

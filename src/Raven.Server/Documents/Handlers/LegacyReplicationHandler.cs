@@ -17,6 +17,8 @@ using Raven.Server.Smuggler.Documents.Data;
 using Raven.Server.Smuggler.Migration;
 using Sparrow.Json;
 using Sparrow.Json.Parsing;
+using Sparrow.Server;
+using Sparrow.Threading;
 using DatabaseSmuggler = Raven.Server.Smuggler.Documents.DatabaseSmuggler;
 
 namespace Raven.Server.Documents.Handlers
@@ -147,13 +149,14 @@ namespace Raven.Server.Documents.Handlers
                         throw new InvalidDataException($"{dataProperty} isn't of type byte[]");
 
                     using (var dataStream = new MemoryStream(data))
+                    using (var allocator = new ByteStringContext(SharedMultipleUseFlag.None))
                     {
                         var attachment = new DocumentItem.AttachmentStream
                         {
                             Stream = documentActions.GetTempStream()
                         };
 
-                        var attachmentDetails = StreamSource.GenerateLegacyAttachmentDetails(contextToUse, dataStream, attachmentKey, metadataBlittable, ref attachment);
+                        var attachmentDetails = StreamSource.GenerateLegacyAttachmentDetails(contextToUse, allocator, dataStream, attachmentKey, metadataBlittable, ref attachment);
 
                         var documentItem = new DocumentItem
                         {

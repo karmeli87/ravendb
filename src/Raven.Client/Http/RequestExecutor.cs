@@ -529,6 +529,22 @@ namespace Raven.Client.Http
             return UnlikelyExecuteAsync(command, context, topologyUpdate, sessionInfo, token);
         }
 
+        internal async Task ExecuteAsync<TResult>(RavenCommand<TResult> command, SessionInfo sessionInfo = null, CancellationToken token = default)
+        {
+            using (ContextPool.AllocateOperationContext(out var context))
+            {
+                var topologyUpdate = _firstTopologyUpdate;
+
+                if (topologyUpdate != null && topologyUpdate.Status == TaskStatus.RanToCompletion || _disableTopologyUpdates)
+                {
+                    var (nodeIndex, chosenNode) = ChooseNodeForRequest(command, sessionInfo);
+                    await ExecuteAsync(chosenNode, nodeIndex, context, command, shouldRetry: true, sessionInfo: sessionInfo, token: token).ConfigureAwait(false);
+                }
+
+                await UnlikelyExecuteAsync(command, context, topologyUpdate, sessionInfo, token).ConfigureAwait(false);
+            }
+        }
+
         public (int CurrentIndex, ServerNode CurrentNode) ChooseNodeForRequest<TResult>(RavenCommand<TResult> cmd, SessionInfo sessionInfo = null)
         {
             if (_disableTopologyUpdates == false)

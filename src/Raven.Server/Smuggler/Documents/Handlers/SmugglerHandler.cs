@@ -52,8 +52,7 @@ namespace Raven.Server.Smuggler.Documents.Handlers
         [RavenAction("/databases/*/smuggler/validate-options", "POST", AuthorizationStatus.ValidUser)]
         public async Task PostValidateOptions()
         {
-            using (ContextPool.AllocateOperationContext(out DocumentsOperationContext context))
-            using (context.OpenReadTransaction())
+            using (ContextPool.AllocateOperationContext(out JsonOperationContext context))
             {
                 var blittableJson = await context.ReadForMemoryAsync(RequestBodyStream(), "");
                 var options = JsonDeserializationServer.DatabaseSmugglerOptions(blittableJson);
@@ -205,7 +204,7 @@ namespace Raven.Server.Smuggler.Documents.Handlers
             }
         }
 
-        private Stream GetOutputStream(Stream fileStream, DatabaseSmugglerOptionsServerSide options)
+        public static Stream GetOutputStream(Stream fileStream, DatabaseSmugglerOptionsServerSide options)
         {
             if (options.EncryptionKey == null)
                 return fileStream;
