@@ -103,6 +103,89 @@ namespace Raven.Server.Documents.Handlers.Admin
             }
         }
 
+        [RavenAction("/admin/rachis/batch", "POST", AuthorizationStatus.Operator)]
+        public async Task ApplyCommandBatch()
+        {
+            using (ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
+            {
+                if (ServerStore.IsLeader() == false)
+                {
+                    throw new NoLeaderException("Not a leader, cannot accept commands.");
+                }
+
+                HttpContext.Response.Headers["Reached-Leader"] = "true";
+
+                var commandsJson = await context.ReadForMemoryAsync(RequestBodyStream(), "external/rachis/command");
+                commandsJson.TryGet(nameof(RemoteRaftCommandsMerger.PutBatchRaftCommands.Commands), out BlittableJsonReaderArray results);
+
+                if (TrafficWatchManager.HasRegisteredClients)
+                    AddStringToHttpContext(commandsJson.ToString(), TrafficWatchChangeType.ClusterCommands);
+
+                var resultsArray = new DynamicJsonArray();
+                var finalResults = new DynamicJsonValue
+                {
+                    [nameof(RemoteRaftCommandsMerger.PutBatchRaftCommandResult.Results)] = resultsArray
+                };
+
+                try
+                {
+                    foreach (BlittableJsonReaderObject commandJson in results)
+                    {
+                        var command = CommandBase.CreateFrom(commandJson);
+                        switch (command)
+                        {
+                            case AddOrUpdateCompareExchangeBatchCommand batchCmpExchangeCommand:
+                                batchCmpExchangeCommand.ContextToWriteResult = context;
+                                break;
+
+                            case CompareExchangeCommandBase cmpExchange:
+                                cmpExchange.ContextToWriteResult = context;
+                                break;
+                        }
+
+                       
+                        var isClusterAdmin = IsClusterAdmin();
+                        command.VerifyCanExecuteCommand(ServerStore, context, isClusterAdmin);
+
+                        var (etag, result) = await ServerStore.Engine.PutAsync(command);
+                        resultsArray.Add(new DynamicJsonValue
+                        {
+                            [nameof(ServerStore.PutRaftCommandResult.RaftCommandIndex)] = etag,
+                            [nameof(ServerStore.PutRaftCommandResult.Data)] = result,
+                        });
+                    }
+
+                    HttpContext.Response.StatusCode = (int)HttpStatusCode.OK;
+                    var ms = context.CheckoutMemoryStream();
+                    try
+                    {
+                        await using (var writer = new AsyncBlittableJsonTextWriter(context, ms))
+                        {
+                            context.Write(writer, finalResults);
+                        }
+
+                        // now that we know that we properly serialized it
+                        ms.Position = 0;
+                        await ms.CopyToAsync(ResponseBodyStream());
+                    }
+                    finally
+                    {
+                        context.ReturnMemoryStream(ms);
+                    }
+                }
+                catch (NotLeadingException e)
+                {
+                    HttpContext.Response.Headers["Reached-Leader"] = "false";
+                    throw new NoLeaderException("Lost the leadership, cannot accept commands.", e);
+                }
+                catch (InvalidOperationException e)
+                {
+                    RequestRouter.AssertClientVersion(HttpContext, e);
+                    throw;
+                }
+            }
+        }
+
         [RavenAction("/rachis/waitfor", "Get", AuthorizationStatus.ValidUser, EndpointType.Read)]
         public async Task WaitForIndex()
         {

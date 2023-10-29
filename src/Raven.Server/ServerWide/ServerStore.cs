@@ -3028,6 +3028,9 @@ namespace Raven.Server.ServerWide
 
         private async Task<(long Index, object Result)> SendToLeaderAsyncInternal(TransactionOperationContext context, CommandBase cmd)
         {
+           // return await _engine.Merger.EnqueueAsync(cmd);
+
+
             //I think it is reasonable to expect timeout twice of error retry
             var timeoutTask = TimeoutManager.WaitFor(Engine.OperationTimeout, _shutdownNotification.Token);
             Exception requestException = null;

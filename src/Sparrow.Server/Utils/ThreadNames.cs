@@ -592,6 +592,18 @@ public static class ThreadNames
                 return $"ClstrTx {_db}";
             }
         }
+
+        public class RaftMerger : IThreadDetails
+        {
+            public RaftMerger()
+            {
+            }
+
+            public string GetShortName()
+            {
+                return $"RaftMrgr";
+            }
+        }
     }
 
     public class ThreadInfo

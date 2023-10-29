@@ -407,12 +407,15 @@ namespace Raven.Server.Rachis
         private readonly Random _rand;
         private string _lastStateChangeReason;
         public Candidate Candidate { get; private set; }
+        public readonly RemoteRaftCommandsMerger Merger;
+
 
         protected RachisConsensus(CipherSuitesPolicy cipherSuitesPolicy, int? seed = null)
         {
             CipherSuitesPolicy = cipherSuitesPolicy;
             _rand = seed.HasValue ? new Random(seed.Value) : new Random();
             LogHistory = new RachisLogHistory();
+            Merger = new RemoteRaftCommandsMerger(this);
         }
 
         public abstract void Notify(Notification notification);
@@ -479,6 +482,11 @@ namespace Raven.Server.Rachis
                     tx.Commit();
                 }
 
+                PoolOfThreads.GlobalRavenThreadPool.LongRunning(_ => Merger.Run(), null, new ThreadNames.ThreadInfo("Remote Merger")
+                {
+                    Details = new ThreadNames.ThreadDetails.RaftMerger()
+                });
+
                 Timeout = new TimeoutEvent(0, "Consensus");
                 RandomizeTimeout();
 
@@ -493,6 +501,7 @@ namespace Raven.Server.Rachis
                 }
 
                 CurrentState = RachisState.Follower;
+                    
                 Timeout.Start(SwitchToCandidateStateOnTimeout);
             }
             catch (Exception)
