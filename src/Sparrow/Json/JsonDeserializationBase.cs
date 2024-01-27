@@ -175,7 +175,8 @@ namespace Sparrow.Json
                 type == typeof(DateTime) ||
                 type == typeof(DateTimeOffset) ||
                 type == typeof(BlittableJsonReaderArray) ||
-                type == typeof(BlittableJsonReaderObject))
+                type == typeof(BlittableJsonReaderObject) || 
+                type == typeof(BlittableJsonReaderObject.RawBlob))
             {
                 var value = GetParameter(propertyType, vars);
 

@@ -553,6 +553,16 @@ namespace Sparrow.Json
             return ParseToMemoryAsync(stream, documentId, BlittableJsonDocumentBuilder.UsageMode.None, modifier: null, token: token);
         }
 
+        public BlittableJsonReaderObject ReadObjectForNetwork(BlittableJsonReaderObject obj, string documentId)
+        {
+            return ReadObject(obj, documentId, BlittableJsonDocumentBuilder.UsageMode.ToNetwork);
+        }
+
+        public BlittableJsonReaderObject ReadObjectForNetwork(DynamicJsonValue obj, string documentId)
+        {
+            return ReadObject(obj, documentId, BlittableJsonDocumentBuilder.UsageMode.ToNetwork);
+        }
+
         private async ValueTask<BlittableJsonReaderObject> ParseToMemoryAsync(Stream stream, string debugTag, BlittableJsonDocumentBuilder.UsageMode mode, IBlittableDocumentModifier modifier = null, CancellationToken? token = null)
         {
             using (GetMemoryBuffer(out var bytes))
@@ -575,6 +585,7 @@ namespace Sparrow.Json
             BlittableJsonDocumentBuilder.UsageMode mode, IBlittableDocumentModifier modifier = null)
         {
             _jsonParserState.Reset();
+            _jsonParserState.SetMode(mode);
             _objectJsonParser.Reset(builder);
             _documentBuilder.Renew(documentId, mode);
             CachedProperties.NewDocument();

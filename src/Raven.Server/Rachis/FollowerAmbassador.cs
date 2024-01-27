@@ -16,6 +16,7 @@ using Raven.Server.Utils;
 using Sparrow;
 using Sparrow.Binary;
 using Sparrow.Json;
+using Sparrow.Json.Parsing;
 using Sparrow.Server.Utils;
 using Sparrow.Threading;
 using Sparrow.Utils;
@@ -785,12 +786,24 @@ namespace Raven.Server.Rachis
         internal static unsafe BlittableJsonReaderObject BuildRachisEntryToSend<TTransaction>(TransactionOperationContext<TTransaction> context, Table.TableValueHolder value)
             where TTransaction : RavenTransaction
         {
-            BlittableJsonReaderObject entry;
+            var ptr = value.Reader.Read(2, out int size);
+            var entry = new BlittableJsonReaderObject(ptr, size, context);
+
+            var djv = new DynamicJsonValue
+            {
+                ["Type"] = nameof(RachisEntry), 
+                [nameof(RachisEntry.Index)] = Bits.SwapBytes(*(long*)value.Reader.Read(0, out size)), 
+                [nameof(RachisEntry.Term)] = *(long*)value.Reader.Read(1, out size),
+                [nameof(RachisEntry.Entry)] = entry,
+                [nameof(RachisEntry.Flags)] = *(RachisEntryFlags*)value.Reader.Read(3, out size)
+            };
+            return context.ReadObjectForNetwork(djv, "rachis-entry");
+            /*BlittableJsonReaderObject entry;
             using (var writer =
                 new ManualBlittableJsonDocumentBuilder<UnmanagedWriteBuffer>(
-                    context, BlittableJsonDocumentBuilder.UsageMode.None))
+                    context, BlittableJsonDocumentBuilder.UsageMode.ToNetwork))
             {
-                writer.Reset(BlittableJsonDocumentBuilder.UsageMode.None);
+                writer.Reset(BlittableJsonDocumentBuilder.UsageMode.ToNetwork);
 
                 writer.StartWriteObjectDocument();
                 writer.StartWriteObject();
@@ -812,7 +825,6 @@ namespace Raven.Server.Rachis
                 writer.WritePropertyName(nameof(RachisEntry.Entry));
                 writer.WriteEmbeddedBlittableDocument(value.Reader.Read(2, out size), size);
 
-
                 writer.WritePropertyName(nameof(RachisEntry.Flags));
                 var flags = *(RachisEntryFlags*)value.Reader.Read(3, out size);
                 Debug.Assert(size == sizeof(RachisEntryFlags));
@@ -823,7 +835,7 @@ namespace Raven.Server.Rachis
                 writer.FinalizeDocument();
                 entry = writer.CreateReader();
             }
-            return entry;
+            return entry;*/
         }
 
         private long InitialNegotiationWithFollower()

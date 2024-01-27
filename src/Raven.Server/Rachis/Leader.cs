@@ -711,8 +711,8 @@ namespace Raven.Server.Rachis
             {
                 Raw?.Dispose();
                 Raw = null;
-                BlittableResultWriter?.Dispose();
                 _ctxReturn?.Dispose();
+                BlittableResultWriter?.Dispose();
             }
         }
 

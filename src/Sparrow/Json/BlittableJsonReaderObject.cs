@@ -529,6 +529,11 @@ namespace Sparrow.Json
                         switch (result)
                         {
                             case LazyStringValue lazyStringValue:
+                                if (typeof(T) == typeof(RawBlob))
+                                {
+                                    obj = (T)(object)new RawBlob(lazyStringValue.Buffer, lazyStringValue.Size);
+                                    break;
+                                }
                                 obj = (T)Convert.ChangeType(lazyStringValue.ToString(), type, CultureInfo.InvariantCulture);
                                 break;
 
@@ -542,6 +547,14 @@ namespace Sparrow.Json
                                 else
                                     obj = (T)Convert.ChangeType(lazyCompressStringValue.ToString(), type, CultureInfo.InvariantCulture);
                                 break;
+
+                            case BlittableJsonReaderObject blob:
+                                if (typeof(T) == typeof(RawBlob))
+                                {
+                                    obj = (T)(object)new RawBlob(blob);
+                                    break;
+                                }
+                                goto default;
 
                             default:
                                 obj = (T)Convert.ChangeType(result, type, CultureInfo.InvariantCulture);
@@ -1021,6 +1034,31 @@ namespace Sparrow.Json
             {
                 Address = ptr;
                 Length = length;
+            }
+
+            public RawBlob(BlittableJsonReaderObject blittable)
+            {
+                var raw = blittable;
+                if (blittable._isRoot == false)
+                {
+                    raw = blittable.CloneOnTheSameContext();
+                }
+
+                Address = raw.BasePointer;
+                Length = raw.Size;
+            }
+
+            public RawBlob Clone(JsonOperationContext context)
+            {
+                var b = ToBlittableJsonReaderObject(context);
+                return new RawBlob(b.Clone(context));
+            }
+
+            public BlittableJsonReaderObject ToBlittableJsonReaderObject(JsonOperationContext context)
+            {
+                var r = new BlittableJsonReaderObject(Address, Length, context);
+                r.BlittableValidation();
+                return r;
             }
 
             public byte* Address;

@@ -12,7 +12,7 @@ namespace Sparrow.Json
         private static readonly StringSegment UnderscoreSegment = new StringSegment("_");
 
         private readonly JsonOperationContext _context;
-        private UsageMode _mode;
+        public UsageMode _mode;
         private readonly IJsonParser _reader;
         public IBlittableDocumentModifier _modifier;
         private readonly BlittableWriter<UnmanagedWriteBuffer> _writer;
@@ -434,6 +434,7 @@ namespace Sparrow.Json
             ValidateDouble = 1,
             CompressStrings = 2,
             CompressSmallStrings = 4,
+            ToNetwork = 8,
             ToDisk = ValidateDouble | CompressStrings
         }
 

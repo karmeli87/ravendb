@@ -3017,7 +3017,10 @@ namespace Raven.Server.ServerWide
         public async Task<(long Index, object Result)> SendToLeaderAsync(CommandBase cmd, CancellationToken? token = null)
         {
             using (ContextPool.AllocateOperationContext(out TransactionOperationContext context))
+            {
+                cmd.Raw = context.ReadObjectForNetwork(cmd.ToJson(context), "move raft to context");
                 return await SendToLeaderAsyncInternal(context, cmd, token ?? _shutdownNotification.Token);
+            }
         }
 
         private async Task<(long Index, object Result)> SendToLeaderAsyncInternal(TransactionOperationContext context, CommandBase cmd, CancellationToken token)
@@ -3103,8 +3106,9 @@ namespace Raven.Server.ServerWide
         private async Task<(long Index, object Result)> SendToNodeAsync(TransactionOperationContext context, string engineLeaderTag, CommandBase cmd,
             Reference<bool> reachedLeader, CancellationToken token)
         {
-            var djv = cmd.ToJson(context);
-            var cmdJson = context.ReadObject(djv, "raft/command");
+            /*var djv = cmd.ToJson(context);
+            var cmdJson = context.ReadObjectForNetwork(djv, "raft/command");*/
+            var cmdJson = cmd.Raw;
 
             ClusterTopology clusterTopology;
             using (context.OpenReadTransaction())

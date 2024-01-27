@@ -11,10 +11,12 @@ using Raven.Client.ServerWide;
 using Raven.Server.Documents;
 using Raven.Server.Rachis.Remote;
 using Raven.Server.ServerWide;
+using Raven.Server.ServerWide.Commands;
 using Raven.Server.ServerWide.Context;
 using Raven.Server.Utils;
 using Sparrow;
 using Sparrow.Json;
+using Sparrow.Json.Parsing;
 using Sparrow.Server;
 using Sparrow.Server.Utils;
 using Sparrow.Utils;
@@ -120,7 +122,24 @@ namespace Raven.Server.Rachis
                             {
                                 for (int i = 0; i < appendEntries.EntriesCount; i++)
                                 {
-                                    entries.Add(_connection.ReadRachisEntry(context));
+                                    var entry = _connection.ReadRachisEntry(context);
+
+                                    entry.Entry.TryGet("Type", out string type);
+                                    switch (type)
+                                    {
+                                        case nameof(ClusterTransactionCommand):
+                                            if (entry.Entry.TryGet(nameof(ClusterTransactionCommand.SerializedDatabaseCommands), out BlittableJsonReaderObject commands))
+                                            {
+                                                entry.Entry.Modifications = new DynamicJsonValue
+                                                {
+                                                    [nameof(ClusterTransactionCommand.SerializedDatabaseCommands)] = new BlittableJsonReaderObject.RawBlob(commands)
+                                                };
+                                                entry.Entry = context.ReadObject(entry.Entry, "rewrite-cluster-tx");
+                                            }
+                                            break;
+                                    }
+
+                                    entries.Add(entry);
                                 }
                             }
                             finally
@@ -134,7 +153,7 @@ namespace Raven.Server.Rachis
                         {
                             _engine.Log.Info($"{ToString()}: Got non empty append entries request with {entries.Count} entries. Last: ({entries[entries.Count - 1].Index} - {entries[entries.Count - 1].Flags})"
 #if DEBUG
-                                + $"[{string.Join(" ,", entries.Select(x => x.ToString()))}]"
+                                // + $"[{string.Join(" ,", entries.Select(x => x.ToString()))}]"
 #endif
                                 );
                         }

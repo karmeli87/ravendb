@@ -956,8 +956,9 @@ namespace Raven.Server.ServerWide
                 clusterTransaction = (ClusterTransactionCommand)JsonDeserializationCluster.Commands[nameof(ClusterTransactionCommand)](cmd);
                 var dbTopology = UpdateDatabaseRecordId(context, index, clusterTransaction);
 
-                if (clusterTransaction.SerializedDatabaseCommands != null &&
-                    clusterTransaction.SerializedDatabaseCommands.TryGet(nameof(ClusterTransactionCommand.Options), out BlittableJsonReaderObject blittableOptions))
+                using var serializedDatabaseCommands = clusterTransaction.SerializedDatabaseCommands?.ToBlittableJsonReaderObject(context);
+                if (serializedDatabaseCommands != null &&
+                    serializedDatabaseCommands.TryGet(nameof(ClusterTransactionCommand.Options), out BlittableJsonReaderObject blittableOptions))
                 {
                     clusterTransaction.Options = JsonDeserializationServer.ClusterTransactionOptions(blittableOptions);
                 }
@@ -966,7 +967,7 @@ namespace Raven.Server.ServerWide
                 var error = clusterTransaction.ExecuteCompareExchangeCommands(dbTopology, context, index, compareExchangeItems);
                 if (error == null)
                 {
-                    clusterTransaction.SaveCommandsBatch(context, index);
+                    clusterTransaction.SaveCommandsBatch(context, serializedDatabaseCommands, index);
                     var notify = clusterTransaction.HasDocumentsInTransaction
                         ? DatabasesLandlord.ClusterDatabaseChangeType.PendingClusterTransactions
                         : DatabasesLandlord.ClusterDatabaseChangeType.ClusterTransactionCompleted;

@@ -16,7 +16,7 @@ namespace Sparrow.Json.Parsing
         public JsonParserTokenContinuation Continuation;
 
         public readonly FastList<int> EscapePositions = new FastList<int>();
-       
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteVariableSizeInt(ref byte* dest, int value)
         {
@@ -211,6 +211,13 @@ namespace Sparrow.Json.Parsing
             return (int)(buffer - originalBuffer);
         }
 
+        public void SetMode(BlittableJsonDocumentBuilder.UsageMode mode)
+        {
+            Mode = mode;
+        }
+
+        public BlittableJsonDocumentBuilder.UsageMode Mode { get; private set; }
+
         public void Reset()
         {
             StringBuffer = null;
@@ -220,6 +227,7 @@ namespace Sparrow.Json.Parsing
             CurrentTokenType = JsonParserToken.None;
             Continuation = JsonParserTokenContinuation.None;
             EscapePositions.Clear();
+            Mode = BlittableJsonDocumentBuilder.UsageMode.None;
         }
     }
 }

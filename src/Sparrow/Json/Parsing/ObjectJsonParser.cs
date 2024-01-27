@@ -8,6 +8,7 @@ using System.Linq;
 using Sparrow.Collections;
 using Sparrow.Extensions;
 using Sparrow.Utils;
+using static Sparrow.Json.BlittableJsonReaderObject;
 
 namespace Sparrow.Json.Parsing
 {
@@ -311,36 +312,8 @@ namespace Sparrow.Json.Parsing
 
                 if (current is BlittableJsonReaderObject bjro)
                 {
-                    if (bjro.Modifications == null)
-                        bjro.Modifications = new DynamicJsonValue(bjro);
-                    if (_seenValues.Add(bjro.Modifications))
-                    {
-                        _elements.Push(bjro);
-                        bjro.Modifications.SourceIndex = -1;
-                        bjro.Modifications.ModificationsIndex = 0;
-                        bjro.Modifications.SourceProperties = bjro.GetPropertiesByInsertionOrder();
-                        _state.CurrentTokenType = JsonParserToken.StartObject;
+                    if (HandleBlittable(bjro, ref current))
                         return true;
-                    }
-
-                    var modifications = bjro.Modifications;
-                    modifications.SourceIndex++;
-                    var propDetails = new BlittableJsonReaderObject.PropertyDetails();
-                    if (modifications.SourceIndex < modifications.SourceProperties.Size)
-                    {
-                        var propIndex = modifications.SourceProperties.Properties[modifications.SourceIndex];
-                        if (modifications.Removals != null && modifications.Removals.Contains(propIndex))
-                        {
-                            continue;
-                        }
-                        bjro.GetPropertyByIndex(propIndex, ref propDetails);
-                        _elements.Push(bjro);
-                        _elements.Push(propDetails.Value);
-                        current = propDetails.Name;
-                        continue;
-                    }
-                    modifications.SourceProperties.Dispose();
-                   current = modifications;
                     continue;
                 }
 
@@ -352,7 +325,7 @@ namespace Sparrow.Json.Parsing
                     if (_seenValues.Add(bjra.Modifications))
                     {
                         _elements.Push(bjra);
-                        bjra.Modifications.SourceIndex = bjra.Modifications.SkipOriginalArray  ? bjra.Length : -1;
+                        bjra.Modifications.SourceIndex = bjra.Modifications.SkipOriginalArray ? bjra.Length : -1;
                         bjra.Modifications.ModificationsIndex = 0;
                         _state.CurrentTokenType = JsonParserToken.StartArray;
                         return true;
@@ -397,10 +370,18 @@ namespace Sparrow.Json.Parsing
                     return true;
                 }
 
-                if (current is BlittableJsonReaderObject.RawBlob bs)
+                if (current is RawBlob blob)
                 {
-                    _state.StringBuffer = bs.Address;
-                    _state.StringSize = bs.Length;
+                    if (_state.Mode == BlittableJsonDocumentBuilder.UsageMode.ToNetwork)
+                    {
+                        var raw = new BlittableJsonReaderObject(blob.Address, blob.Length, _ctx);
+                        if (HandleBlittable(raw, ref current))
+                            return true;
+                        continue;
+                    }
+
+                    _state.StringBuffer = blob.Address;
+                    _state.StringSize = blob.Length;
                     _state.CompressedSize = null;// don't even try
                     _state.CurrentTokenType = JsonParserToken.Blob;
                     return true;
@@ -598,6 +579,41 @@ namespace Sparrow.Json.Parsing
 
                 throw new InvalidOperationException("Got unknown type: " + current.GetType() + " " + current);
             }
+        }
+
+        private bool HandleBlittable(BlittableJsonReaderObject bjro, ref object current)
+        {
+            if (bjro.Modifications == null)
+                bjro.Modifications = new DynamicJsonValue(bjro);
+            if (_seenValues.Add(bjro.Modifications))
+            {
+                _elements.Push(bjro);
+                bjro.Modifications.SourceIndex = -1;
+                bjro.Modifications.ModificationsIndex = 0;
+                bjro.Modifications.SourceProperties = bjro.GetPropertiesByInsertionOrder();
+                _state.CurrentTokenType = JsonParserToken.StartObject;
+                return true;
+            }
+
+            var modifications = bjro.Modifications;
+            modifications.SourceIndex++;
+            var propDetails = new BlittableJsonReaderObject.PropertyDetails();
+            if (modifications.SourceIndex < modifications.SourceProperties.Size)
+            {
+                var propIndex = modifications.SourceProperties.Properties[modifications.SourceIndex];
+                if (modifications.Removals != null && modifications.Removals.Contains(propIndex))
+                {
+                    return false;
+                }
+                bjro.GetPropertyByIndex(propIndex, ref propDetails);
+                _elements.Push(bjro);
+                _elements.Push(propDetails.Value);
+                current = propDetails.Name;
+                return false;
+            }
+            modifications.SourceProperties.Dispose();
+            current = modifications;
+            return false;
         }
 
         private void ReadEscapePositions(byte* buffer, int escapeSequencePos)

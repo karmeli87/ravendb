@@ -126,13 +126,19 @@ namespace Raven.Server.ServerWide.Commands
         }
 
         public List<ClusterTransactionDataCommand> ClusterCommands = new List<ClusterTransactionDataCommand>();
-        public BlittableJsonReaderObject SerializedDatabaseCommands;
 
         [JsonDeserializationIgnore]
         public ClusterTransactionOptions Options;
 
         [JsonDeserializationIgnore]
         public readonly List<ClusterTransactionDataCommand> DatabaseCommands = new List<ClusterTransactionDataCommand>();
+        /*
+        [JsonDeserializationIgnore]
+        public BlittableJsonReaderObject SerializedDatabaseCommands;
+        */
+
+        // public BlittableJsonReaderObject.RawJson SerializedDatabaseCommands;
+        public BlittableJsonReaderObject.RawBlob SerializedDatabaseCommands;
 
         public bool FromBackup;
 
@@ -306,7 +312,9 @@ namespace Raven.Server.ServerWide.Commands
             if (SerializedDatabaseCommands == null)
                 return;
 
-            if (SerializedDatabaseCommands.TryGet(nameof(DatabaseCommands), out BlittableJsonReaderArray commands) == false)
+            using var serializedDatabaseCommands = SerializedDatabaseCommands.ToBlittableJsonReaderObject(context);
+
+            if (serializedDatabaseCommands.TryGet(nameof(DatabaseCommands), out BlittableJsonReaderArray commands) == false)
                 return;
 
             ClusterCommands ??= new List<ClusterTransactionDataCommand>();
@@ -397,14 +405,13 @@ namespace Raven.Server.ServerWide.Commands
             return Constants.CompareExchange.RvnAtomicPrefix + docId;
         }
 
-        public unsafe void SaveCommandsBatch(ClusterOperationContext context, long index)
+        public unsafe void SaveCommandsBatch(ClusterOperationContext context, BlittableJsonReaderObject serializedDatabaseCommands, long index)
         {
             if (HasDocumentsInTransaction == false)
                 return;
 
             var items = context.Transaction.InnerTransaction.OpenTable(ClusterStateMachine.TransactionCommandsSchema, ClusterStateMachine.TransactionCommands);
             var commandsCountPerDatabase = context.Transaction.InnerTransaction.ReadTree(ClusterStateMachine.TransactionCommandsCountPerDatabase);
-            var commands = context.ReadObject(SerializedDatabaseCommands, "serialized-tx-commands");
 
             using (GetPrefix(context, DatabaseName, out var databaseSlice))
             {
@@ -413,7 +420,7 @@ namespace Raven.Server.ServerWide.Commands
                 using (items.Allocate(out TableValueBuilder tvb))
                 {
                     tvb.Add(prefixSlice.Content.Ptr, prefixSlice.Size);
-                    tvb.Add(commands.BasePointer, commands.Size);
+                    tvb.Add(serializedDatabaseCommands.BasePointer, serializedDatabaseCommands.Size);
                     tvb.Add(index);
                     items.Insert(tvb);
                     using (commandsCountPerDatabase.DirectAdd(databaseSlice, sizeof(long), out var ptr))
@@ -667,7 +674,6 @@ namespace Raven.Server.ServerWide.Commands
         {
             var djv = base.ToJson(context);
             djv[nameof(ClusterCommands)] = new DynamicJsonArray(ClusterCommands.Select(x => x.ToJson(context)));
-            djv[nameof(SerializedDatabaseCommands)] = SerializedDatabaseCommands?.Clone(context);
             if (SerializedDatabaseCommands == null && DatabaseCommands.Count > 0)
             {
                 var databaseCommands = new DynamicJsonValue
@@ -675,8 +681,12 @@ namespace Raven.Server.ServerWide.Commands
                     [nameof(DatabaseCommands)] = new DynamicJsonArray(DatabaseCommands.Select(x => x.ToJson(context))),
                     [nameof(Options)] = Options.ToJson(),
                 };
-                djv[nameof(SerializedDatabaseCommands)] = context.ReadObject(databaseCommands, "read database commands");
+
+                var commands = context.ReadObject(databaseCommands, "read database commands");
+                SerializedDatabaseCommands = new BlittableJsonReaderObject.RawBlob(commands);
             }
+            
+            djv[nameof(SerializedDatabaseCommands)] = SerializedDatabaseCommands;
             djv[nameof(DatabaseName)] = DatabaseName;
             djv[nameof(DatabaseRecordId)] = DatabaseRecordId;
             djv[nameof(ClusterTransactionId)] = ClusterTransactionId;
