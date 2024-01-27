@@ -684,7 +684,7 @@ namespace Raven.Server.Rachis
             public TaskCompletionSource<Task<(long Index, object Result)>> Tcs = new TaskCompletionSource<Task<(long Index, object Result)>>(TaskCreationOptions.RunContinuationsAsynchronously);
             public readonly MultipleUseFlag Consumed = new MultipleUseFlag();
             public BlittableResultWriter BlittableResultWriter { get; private set; }
-
+            public BlittableJsonReaderObject Raw;
             public RachisMergedCommand(ClusterContextPool pool, CommandBase command)
             {
                 _pool = pool;
@@ -695,13 +695,9 @@ namespace Raven.Server.Rachis
             {
                 BlittableResultWriter = Command is IBlittableResultCommand crCommand ? new BlittableResultWriter(crCommand.WriteResult) : null;
 
-                // we prepare the command _not_ under the write lock
-                if (Command.Raw == null)
-                {
-                    _ctxReturn = _pool.AllocateOperationContext(out JsonOperationContext context);
-                    var djv = Command.ToJson(context);
-                    Command.Raw = context.ReadObject(djv, "prepare-raw-command");
-                }
+                _ctxReturn = _pool.AllocateOperationContext(out JsonOperationContext context);
+                var djv = Command.ToJson(context);
+                Raw = context.ReadObject(djv, "prepare-raw-command");
             }
 
             public async Task<(long Index, object Result)> Result()
@@ -713,8 +709,8 @@ namespace Raven.Server.Rachis
 
             public void Dispose()
             {
-                Command.Raw?.Dispose();
-                Command.Raw = null;
+                Raw?.Dispose();
+                Raw = null;
                 BlittableResultWriter?.Dispose();
                 _ctxReturn?.Dispose();
             }
@@ -838,7 +834,7 @@ namespace Raven.Server.Rachis
                             }
                             else
                             {
-                                index = _engine.InsertToLeaderLog(context, Term, cmd.Command.Raw, RachisEntryFlags.StateMachineCommand);
+                                index = _engine.InsertToLeaderLog(context, Term, cmd.Raw, RachisEntryFlags.StateMachineCommand);
                             }
 
                             if (_entries.TryGetValue(index, out var state) == false)
