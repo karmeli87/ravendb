@@ -1,5 +1,7 @@
 using System;
+using System.Buffers;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Sparrow.Collections;
 
 namespace Sparrow.Json.Parsing
@@ -97,7 +99,7 @@ namespace Sparrow.Json.Parsing
 
             for (int i = 0; i < size; i++)
             {
-                byte value = str[i];
+                uint value = str[i];
 
                 // PERF: We use the values directly because it is 5x faster than iterating over a constant array.
                 // 8  => '\b' => 0000 1000
@@ -136,6 +138,65 @@ namespace Sparrow.Json.Parsing
             FindEscapePositionsIn(EscapePositions, str, ref len, previousComputedMaxSize);
         }
 
+#if NETCOREAPP3_1_OR_GREATER
+        public static void FindEscapePositionsIn(FastList<int> buffer, byte* str, ref int len, int previousComputedMaxSize)
+        {
+            var originalLen = len;
+            buffer.Clear();
+            if (previousComputedMaxSize == EscapePositionItemSize)
+            {
+                // if the value is 5, then we got no escape positions, see: FindEscapePositionsMaxSize
+                // and we don't have to do any work
+                return;
+            }
+            var lastEscape = 0;
+            var remaining = originalLen;
+
+            var start = str;
+            while (remaining > 0)
+            {
+                if (Rune.DecodeFromUtf8(new ReadOnlySpan<byte>(start, remaining), out var rune, out var bytesConsumed) != OperationStatus.Done)
+                    throw new InvalidOperationException($"Unable to decode the ID {Encoding.UTF8.GetString(new ReadOnlySpan<byte>(str, originalLen))}");
+
+                remaining -= bytesConsumed;
+
+                if (remaining < 0)
+                    throw new InvalidOperationException($"Read beyond buffer while decoding the ID {Encoding.UTF8.GetString(new ReadOnlySpan<byte>(str, originalLen))}");
+
+                var value = rune.Value;
+                if (value == 92 || value == 34 || (value >= 8 && value <= 13 && value != 11))
+                {
+                    var currentPosition = originalLen - remaining - bytesConsumed;
+                    buffer.Add(currentPosition - lastEscape);
+                    lastEscape = currentPosition + 1;
+                }
+                //Control character ascii values
+                else if (value < 32)
+                {
+                    if (len + ControlCharacterItemSize > originalLen + previousComputedMaxSize)
+                        ThrowInvalidSizeForEscapeControlChars(previousComputedMaxSize);
+
+                    // move rest of buffer 
+                    // write \u0000
+                    // update size
+                    //here we only shifting by 5 bytes since we are going to override the byte at the current position.
+                    // source and destination blocks may overlap so we using Buffer.MemoryCopy to handle that scenario.
+                    Buffer.MemoryCopy(start, start + 2 + ControlCharacterItemSize, (uint)remaining, (uint)remaining);
+                    start[0] = (byte)'\\';
+                    start[1] = (byte)'u';
+                    fixed (byte* controlString = AsyncBlittableJsonTextWriter.ControlCodeEscapes[value])
+                    {
+                        Memory.Copy(start + 2, controlString, 4);
+                    }
+                    //The original string already had one byte so we only added 5.
+                    len += ControlCharacterItemSize;
+                    start += ControlCharacterItemSize + 2;
+                }
+
+                start += bytesConsumed;
+            }
+        }
+#else
         public static void FindEscapePositionsIn(FastList<int> buffer, byte* str, ref int len, int previousComputedMaxSize)
         {
             var originalLen = len;
@@ -194,6 +255,8 @@ namespace Sparrow.Json.Parsing
                 }
             }
         }
+#endif
+
         private static void ThrowInvalidSizeForEscapeControlChars(int previousComputedMaxSize)
         {
             throw new InvalidOperationException($"The previousComputedMaxSize: {previousComputedMaxSize} is too small to support the required escape positions. Did you not call FindMaxNumberOfEscapePositions?");

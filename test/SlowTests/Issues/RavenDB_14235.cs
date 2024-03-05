@@ -1,16 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using FastTests;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Linq;
 using Raven.Client.Documents.Operations.Attachments;
 using Raven.Client.Documents.Session;
+using Raven.Server.Documents;
+using Sparrow.Json;
+using Sparrow.Server;
+using Sparrow.Threading;
 using Xunit;
 using Xunit.Abstractions;
-#pragma warning disable 1998
-#pragma warning disable 4014
 
 namespace SlowTests.Issues
 {
@@ -20,6 +24,76 @@ namespace SlowTests.Issues
 
         public RavenDB_14235(ITestOutputHelper output) : base(output)
         {
+        }
+
+        [Fact]
+        public unsafe void PassingOnlyEscapedCharactersAsId1()
+        {
+            string str = "\t\t";
+            using (var ctx = JsonOperationContext.ShortTermSingleUse())
+            using (var allocator = new ByteStringContext(SharedMultipleUseFlag.None))
+            using (DocumentIdWorker.GetLowerIdSliceAndStorageKey(allocator, str, out var lowerIdSlice, out var idSlice))
+            {
+                var writer = new AsyncBlittableJsonTextWriter(ctx, new MemoryStream());
+                var s1 = ctx.AllocateStringValue(null, lowerIdSlice.Content.Ptr, lowerIdSlice.Size);
+                s1.LazyStringFormat = false;
+                var s2 = ctx.GetLazyStringValue(idSlice.Content.Ptr);
+                writer.WriteString(s1);
+                writer.WriteString(s2);
+            }
+        }
+
+        [Fact]
+        public unsafe void PassingOnlyEscapedCharactersAsId2()
+        {
+            var bytes = new byte[24];
+            bytes[0] = 0xef;
+            bytes[1] = 0xbf;
+            bytes[2] = 0xbd;
+            bytes[3] = 0x33;
+            bytes[4] = 0x13;
+            bytes[5] = 0xef;
+            bytes[6] = 0xbf;
+            bytes[7] = 0xbd;
+            bytes[8] = 0x27;
+            bytes[9] = 0xca;
+            bytes[10] = 0x83;
+            bytes[11] = 0x32;
+            bytes[12] = 0xef;
+            bytes[13] = 0xbf;
+            bytes[14] = 0xbd;
+            bytes[15] = 0x1f;
+            bytes[16] = 0xef;
+            bytes[17] = 0xbf;
+            bytes[18] = 0xbd;
+            bytes[19] = 0xef;
+            bytes[20] = 0xbf;
+            bytes[21] = 0xbd;
+            bytes[22] = 0x57;
+            bytes[23] = 0x09;
+
+            string str;
+
+            unsafe
+            {
+                fixed (byte* ptr = bytes)
+                {
+                    str = Encoding.UTF8.GetString(ptr, bytes.Length);
+                }
+            }
+
+            // str = "\u0080";
+            var b = Encoding.UTF8.GetBytes(str);
+            using (var ctx = JsonOperationContext.ShortTermSingleUse())
+            using (var allocator = new ByteStringContext(SharedMultipleUseFlag.None))
+            using (DocumentIdWorker.GetLowerIdSliceAndStorageKey(allocator, str, out var lowerIdSlice, out var idSlice))
+            {
+                var writer = new AsyncBlittableJsonTextWriter(ctx, new MemoryStream());
+                var s1 = ctx.AllocateStringValue(null, lowerIdSlice.Content.Ptr, lowerIdSlice.Size);
+                var s2 = ctx.GetLazyStringValue(idSlice.Content.Ptr);
+                writer.WriteString(s1);
+                writer.WriteString(s2);
+            }
         }
 
         [Theory]
@@ -47,8 +121,45 @@ namespace SlowTests.Issues
                 for (int i = 0; i < size; i++)
                     chars[i] = (char)c;
 
-                var str = new string(chars);
+                var bytes = new byte[24];
+                bytes[0] = 0xef;
+                bytes[1] = 0xbf;
+                bytes[2] = 0xbd;
+                bytes[3] = 0x33;
+                bytes[4] = 0x13;
+                bytes[5] = 0xef;
+                bytes[6] = 0xbf;
+                bytes[7] = 0xbd;
+                bytes[8] = 0x27;
+                bytes[9] = 0xca;
+                bytes[10] = 0x83;
+                bytes[11] = 0x32;
+                bytes[12] = 0xef;
+                bytes[13] = 0xbf;
+                bytes[14] = 0xbd;
+                bytes[15] = 0x1f;
+                bytes[16] = 0xef;
+                bytes[17] = 0xbf;
+                bytes[18] = 0xbd;
+                bytes[19] = 0xef;
+                bytes[20] = 0xbf;
+                bytes[21] = 0xbd;
+                bytes[22] = 0x57;
+                bytes[23] = 0x09;
 
+                string str;
+
+                unsafe
+                {
+                    fixed (byte* ptr = bytes)
+                    {
+                        str = Encoding.UTF8.GetString(ptr, bytes.Length);
+                    }
+                }
+                // var encoded = Encoding.ASCII.GetString(bytes);
+               
+                // var str = "users/" + encoded;
+               
                 using (var store = GetDocumentStore())
                 {
                     using (var session = store.OpenAsyncSession())
@@ -56,6 +167,7 @@ namespace SlowTests.Issues
                         await session.StoreAsync(new User { WeirdName = str }, str);
                         await session.SaveChangesAsync();
                     }
+                    WaitForUserToContinueTheTest(store, debug: false);
                     using (var session = store.OpenAsyncSession())
                     {
                         var u = await session.LoadAsync<User>(str);

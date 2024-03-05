@@ -64,6 +64,7 @@ namespace Sparrow.Json
         internal JsonOperationContext _context;
         private string _string;
 
+        public bool LazyStringFormat = true;
         private string MaterializeStringValue => ToString();
 
         private byte* _buffer;

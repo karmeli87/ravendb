@@ -2707,7 +2707,9 @@ namespace Raven.Server.Documents
         public static LazyStringValue TableValueToString(JsonOperationContext context, int index, ref TableValueReader tvr)
         {
             var ptr = tvr.Read(index, out int size);
-            return context.AllocateStringValue(null, ptr, size);
+            var lsv = context.AllocateStringValue(null, ptr, size);
+            lsv.LazyStringFormat = false;
+            return lsv;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

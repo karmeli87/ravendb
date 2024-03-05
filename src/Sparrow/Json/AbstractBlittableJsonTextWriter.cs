@@ -221,15 +221,16 @@ namespace Sparrow.Json
 
             var size = str.Size;
 
+            /*
             if (size == 1 && str.IsControlCodeCharacter(out var b))
             {
                 WriteString($@"\u{b:X4}", skipEscaping: true);
                 return;
-            }
+            }*/
 
             var strBuffer = str.Buffer;
             var escapeSequencePos = size;
-            var numberOfEscapeSequences = skipEscaping ? 0 : BlittableJsonReaderBase.ReadVariableSizeInt(str.Buffer, ref escapeSequencePos);
+            var numberOfEscapeSequences = str.LazyStringFormat ? BlittableJsonReaderBase.ReadVariableSizeInt(str.Buffer, ref escapeSequencePos) : 0;
 
             // We ensure our buffer will have enough space to deal with the whole string.
 
