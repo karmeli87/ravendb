@@ -15,35 +15,35 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class RevisionsHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/revisions/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/revisions/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns document revision configuration.")]
         public async Task GetRevisionsConfiguration()
         {
             using (var processor = new RevisionsHandlerProcessorForGetRevisionsConfiguration(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/revisions/conflicts/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/revisions/conflicts/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns conflict resolution configuration for revisions.")]
         public async Task GetConflictRevisionsConfig()
         {
             using (var processor = new RevisionsHandlerProcessorForGetRevisionsConflictsConfiguration(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/revisions/count", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/revisions/count", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns the count of revisions for a document.")]
         public async Task GetRevisionsCountFor()
         {
             using (var processor = new RevisionsHandlerProcessorForGetRevisionsCount(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/revisions", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/revisions", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns document revisions.")]
         public async Task GetRevisionsFor()
         {
             using (var processor = new RevisionsHandlerProcessorForGetRevisions(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/revisions/size", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/revisions/size", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns the size of document revisions.")]
         public async Task GetRevisionsSize()
         {
             RevisionSizeDetails size;
@@ -85,14 +85,14 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/revisions/resolved", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/revisions/resolved", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns resolved information.")]
         public async Task GetResolvedConflictsSince()
         {
             using (var processor = new RevisionsHandlerProcessorForGetResolvedRevisions(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/revisions/bin", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/revisions/bin", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns documents in the revisions bin.")]
         public async Task GetRevisionsBin()
         {
             using (var processor = new RevisionsHandlerProcessorForGetRevisionsBin(this))

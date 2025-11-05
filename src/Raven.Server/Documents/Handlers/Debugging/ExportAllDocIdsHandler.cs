@@ -11,7 +11,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 {
     public sealed class AllDocumentIdsDebugHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/debug/documents/export-all-ids", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/debug/documents/export-all-ids", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns export-all-ids information.")]
         public async Task ExportAllDocIds()
         {
             var fileName = $"ids-for-{Uri.EscapeDataString(Database.Name)}-{Database.Time.GetUtcNow().GetDefaultRavenFormat(isUtc: true)}.txt";

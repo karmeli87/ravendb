@@ -6,7 +6,7 @@ namespace Raven.Server.Documents.Handlers
 {
     public class DataArchivalHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/data-archival/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/data-archival/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns data archival configuration.")]
         public async Task GetArchivalConfig()
         {
             using (var processor = new DataArchivalHandlerProcessorForGet(this))

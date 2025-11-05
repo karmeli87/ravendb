@@ -6,7 +6,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 {
     public sealed class RevisionsHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/debug/documents/get-revisions", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/debug/documents/get-revisions", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns get-revisions information.")]
         public async Task GetRevisions()
         {
             using (var processor = new RevisionsHandlerProcessorForGetRevisionsDebug(this))

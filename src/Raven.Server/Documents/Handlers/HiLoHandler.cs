@@ -8,7 +8,7 @@ namespace Raven.Server.Documents.Handlers
     {
         public const string RavenHiloIdPrefix = "Raven/Hilo/";
 
-        [RavenAction("/databases/*/hilo/next", "GET", AuthorizationStatus.ValidUser, EndpointType.Write)]
+        [RavenAction("/databases/*/hilo/next", "GET", AuthorizationStatus.ValidUser, EndpointType.Write, Description = "Returns the next HiLo value for ID generation.")]
         public async Task GetNextHiLo()
         {
             using (var processor = new HiLoHandlerProcessorForGetNextHiLo(this))

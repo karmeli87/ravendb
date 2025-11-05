@@ -20,7 +20,7 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class TimeSeriesHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/timeseries/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/timeseries/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns statistics for time series data.")]
         public async Task Stats()
         {
             using (var processor = new TimeSeriesHandlerProcessorForGetTimeSeriesStats(this))
@@ -29,7 +29,7 @@ namespace Raven.Server.Documents.Handlers
             }
         }
 
-        [RavenAction("/databases/*/timeseries/ranges", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/timeseries/ranges", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns time series data within specified ranges.")]
         public async Task ReadRanges()
         {
             using (var processor = new TimeSeriesHandlerProcessorForGetTimeSeriesRanges(this))
@@ -102,7 +102,7 @@ namespace Raven.Server.Documents.Handlers
             }
         }
 
-        [RavenAction("/databases/*/timeseries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/timeseries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns time series data for a document.")]
         public async Task Read()
         {
             using (var processor = new TimeSeriesHandlerProcessorForGetTimeSeries(this))
@@ -118,7 +118,7 @@ namespace Raven.Server.Documents.Handlers
             }
         }
 
-        [RavenAction("/databases/*/timeseries/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/timeseries/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns time series configuration.")]
         public async Task GetTimeSeriesConfiguration()
         {
             using (var processor = new ConfigurationHandlerProcessorForGetTimeSeriesConfiguration(this))
@@ -444,7 +444,7 @@ namespace Raven.Server.Documents.Handlers
             }
         }
 
-        [RavenAction("/databases/*/timeseries/debug/segments-summary", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/timeseries/debug/segments-summary", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns debug summary of time series segments.")]
         public async Task GetSegmentSummary()
         {
             using (var processor = new TimeSeriesHandlerProcessorForGetDebugSegmentsSummary(this))

@@ -37,35 +37,35 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/subscriptions/state", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/subscriptions/state", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns the state of a specific subscription.")]
         public async Task GetSubscriptionState()
         {
             using (var processor = new SubscriptionsHandlerProcessorForGetSubscriptionState(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/debug/subscriptions/resend", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/debug/subscriptions/resend", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns debugging information for subscription resend operations.")]
         public async Task GetSubscriptionResend()
         {
             using (var processor = new SubscriptionsHandlerProcessorForGetResend(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/subscriptions/connection-details", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, CorsMode = CorsMode.Cluster)]
+        [RavenAction("/databases/*/subscriptions/connection-details", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, CorsMode = CorsMode.Cluster, Description = "Returns connection details for a subscription.")]
         public async Task GetSubscriptionConnectionDetails()
         {
             using (var processor = new SubscriptionsHandlerProcessorForGetConnectionDetails(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/subscriptions", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/subscriptions", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns a list of all subscriptions in the database.")]
         public async Task GetAll()
         {
             using (var processor = new SubscriptionsHandlerProcessorForGetSubscription(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/subscriptions/performance/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true)]
+        [RavenAction("/databases/*/subscriptions/performance/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, Description = "Returns live performance metrics for subscriptions.")]
         public async Task PerformanceLive()
         {
             using (var processor = new SubscriptionsHandlerProcessorForPerformanceLive(this))

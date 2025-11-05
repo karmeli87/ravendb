@@ -16,7 +16,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 {
     public sealed class DocumentDebugHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/debug/documents/huge", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/debug/documents/huge", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns huge information.")]
         public async Task HugeDocuments()
         {
             using (ContextPool.AllocateOperationContext(out DocumentsOperationContext context))
@@ -71,7 +71,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             public string LastAccess { get; set; }
         }
 
-        [RavenAction("/databases/*/debug/documents/scan-corrupted-ids", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/debug/documents/scan-corrupted-ids", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns scan-corrupted-ids information.")]
         public async Task ScanCorruptedIds()
         {
             var startEtag = GetIntValueQueryString("startEtag", required: false) ?? 0;

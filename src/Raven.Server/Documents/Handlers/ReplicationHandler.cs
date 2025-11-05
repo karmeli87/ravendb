@@ -23,84 +23,84 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class ReplicationHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/replication/tombstones", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/replication/tombstones", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns replication tombstone information.")]
         public async Task GetAllTombstones()
         {
             using (var processor = new ReplicationHandlerProcessorForGetTombstones(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/replication/conflicts", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/replication/conflicts", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns replication conflicts.")]
         public async Task GetReplicationConflicts()
         {
             using (var processor = new ReplicationHandlerProcessorForGetConflicts(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/replication/performance", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/replication/performance", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns replication performance metrics.")]
         public async Task Performance()
         {
             using (var processor = new ReplicationHandlerProcessorForGetPerformance(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/replication/performance/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true)]
+        [RavenAction("/databases/*/replication/performance/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, Description = "Returns live replication performance metrics.")]
         public async Task PerformanceLive()
         {
             using (var processor = new ReplicationHandlerProcessorForGetPerformanceLive(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/replication/pulses/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true)]
+        [RavenAction("/databases/*/replication/pulses/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, Description = "Returns live replication pulse data.")]
         public async Task PulsesLive()
         {
             using (var processor = new ReplicationHandlerProcessorForGetPulsesLive(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/replication/active-connections", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/replication/active-connections", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns active replication connections.")]
         public async Task GetReplicationActiveConnections()
         {
             using (var processor = new ReplicationHandlerProcessorForGetActiveConnections(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/replication/debug/outgoing-failures", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/replication/debug/outgoing-failures", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns outgoing-failures information.")]
         public async Task GetReplicationOutgoingFailureStats()
         {
             using (var processor = new ReplicationHandlerProcessorForGetOutgoingFailureStats(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/replication/debug/incoming-last-activity-time", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/replication/debug/incoming-last-activity-time", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns incoming-last-activity-time information.")]
         public async Task GetReplicationIncomingActivityTimes()
         {
             using (var processor = new ReplicationHandlerProcessorForGetIncomingActivityTimes(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/replication/debug/incoming-rejection-info", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/replication/debug/incoming-rejection-info", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns incoming-rejection-info information.")]
         public async Task GetReplicationIncomingRejectionInfo()
         {
             using (var processor = new ReplicationHandlerProcessorForGetIncomingRejectionInfo(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/replication/debug/outgoing-reconnect-queue", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/replication/debug/outgoing-reconnect-queue", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns outgoing-reconnect-queue information.")]
         public async Task GetReplicationReconnectionQueue()
         {
             using (var processor = new ReplicationHandlerProcessorForGetOutgoingReconnectionQueue(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/replication/conflicts/solver", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/replication/conflicts/solver", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns solver information.")]
         public async Task GetConflictSolver()
         {
             using (var processor = new ReplicationHandlerProcessorForGetConflictSolver(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/debug/replication/all-items", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/debug/replication/all-items", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns all-items information.")]
         public async Task GetAllItems()
         {
             var etag = GetLongQueryString("etag", required: false) ?? 0L;
@@ -200,14 +200,14 @@ namespace Raven.Server.Documents.Handlers
             }
         }
 
-        [RavenAction("/databases/*/replication/progress", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/replication/progress", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns progress information.")]
         public async Task GetReplicationProgress()
         {
             using (var processor = new ReplicationHandlerProcessorForGetOngoingTasksProgress(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/replication/internal/outgoing/progress", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/replication/internal/outgoing/progress", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns progress information.")]
         public async Task GetOutgoingInternalReplicationProgress()
         {
             using (var processor = new ReplicationHandlerProcessorForGetOutgoingInternalReplicationProgress(this))

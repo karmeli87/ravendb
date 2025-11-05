@@ -21,7 +21,7 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/attachments", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/attachments", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns attachment metadata or content.")]
         public async Task Get()
         {
             using (var processor = new AttachmentHandlerProcessorForGetAttachment(this, isDocument: true))
@@ -126,14 +126,14 @@ namespace Raven.Server.Documents.Handlers
             writer.WriteEndObject();
         }
 
-        [RavenAction("/databases/*/debug/attachments/hash", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true)]
+        [RavenAction("/databases/*/debug/attachments/hash", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Returns attachment hash debugging information.")]
         public async Task GetHashCount()
         {
             using (var processor = new AttachmentHandlerProcessorForGetHashCount(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/debug/attachments/metadata", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true)]
+        [RavenAction("/databases/*/debug/attachments/metadata", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Returns attachment metadata for debugging.")]
         public async Task GetAttachmentMetadataWithCounts()
         {
             using (var processor = new AttachmentHandlerProcessorForGetAttachmentMetadataWithCounts(this))
@@ -156,7 +156,7 @@ namespace Raven.Server.Documents.Handlers
             }
         }
 
-        [RavenAction("/databases/*/debug/attachments/missing", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, IsDebugInformationEndpoint = false)]
+        [RavenAction("/databases/*/debug/attachments/missing", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, IsDebugInformationEndpoint = false, Description = "Returns information about missing attachments.")]
         public async Task GetMissingAttachments()
         {
             using (var processor = new AttachmentHandlerProcessorForGetMissingAttachment(this))

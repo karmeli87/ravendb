@@ -14,7 +14,7 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/queries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true)]
+        [RavenAction("/databases/*/queries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Executes a query and returns matching documents.")]
         public async Task Get()
         {
             using (var processor = new DatabaseQueriesHandlerProcessorForGet(this, HttpMethod.Get))

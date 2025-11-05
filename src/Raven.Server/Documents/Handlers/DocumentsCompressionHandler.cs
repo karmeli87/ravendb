@@ -6,7 +6,7 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class DocumentsCompressionHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/documents-compression/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/documents-compression/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns config information.")]
         public async Task GetDocumentsCompressionConfig()
         {
             using (var processor = new DocumentsCompressionHandlerProcessorForGet(this))

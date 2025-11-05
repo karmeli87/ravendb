@@ -66,14 +66,14 @@ namespace Raven.Server.Documents.Handlers.Debugging
             return Task.CompletedTask;
         }
 
-        [RavenAction("/databases/*/debug/storage/environment/debug-only/pages", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false)]
+        [RavenAction("/databases/*/debug/storage/environment/debug-only/pages", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false, Description = "Returns pages information.")]
         public async Task Pages()
         {
             using (var processor = new StorageHandlerProcessorForGetEnvironmentPages(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/debug/storage/trees", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false)]
+        [RavenAction("/databases/*/debug/storage/trees", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false, Description = "Returns trees information.")]
         public async Task Trees()
         {
             using (ContextPool.AllocateOperationContext(out DocumentsOperationContext context))
@@ -116,7 +116,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/databases/*/debug/storage/btree-structure", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false)]
+        [RavenAction("/databases/*/debug/storage/btree-structure", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false, Description = "Returns btree-structure information.")]
         public async Task BTreeStructure()
         {
             var treeName = GetStringQueryString("name", required: true);
@@ -134,7 +134,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/databases/*/debug/storage/fst-structure", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false)]
+        [RavenAction("/databases/*/debug/storage/fst-structure", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false, Description = "Returns fst-structure information.")]
         public async Task FixedSizeTreeStructure()
         {
             var treeName = GetStringQueryString("name", required: true);
@@ -176,14 +176,14 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/databases/*/debug/storage/report", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/debug/storage/report", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns report information.")]
         public async Task Report()
         {
             using (var processor = new StorageHandlerProcessorForGetReport(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/debug/storage/all-environments/report", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false)]
+        [RavenAction("/databases/*/debug/storage/all-environments/report", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false, Description = "Returns debug information for all storage environments.")]
         public async Task AllEnvironmentsReport()
         {
             using (ContextPool.AllocateOperationContext(out DocumentsOperationContext context))
@@ -238,7 +238,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/databases/*/debug/storage/environment/report", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/debug/storage/environment/report", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns storage environment debug information.")]
         public async Task GetEnvironmentReport()
         {
             using (var processor = new StorageHandlerProcessorForGetEnvironmentReport(this))
@@ -259,7 +259,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             return index.GenerateStorageReport(details);
         }
 
-        [RavenAction("/databases/*/debug/storage/compression-dictionaries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false)]
+        [RavenAction("/databases/*/debug/storage/compression-dictionaries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = false, Description = "Returns compression-dictionaries information.")]
         public async Task CompressionDictionary()
         {
             using (ContextPool.AllocateOperationContext(out DocumentsOperationContext context))
@@ -318,14 +318,14 @@ namespace Raven.Server.Documents.Handlers.Debugging
             writer.WriteEndObject();
         }
 
-        [RavenAction("/databases/*/debug/storage/environment/scratch-buffer-info", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/debug/storage/environment/scratch-buffer-info", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns scratch-buffer-info information.")]
         public async Task ScratchBufferPoolInfoReport()
         {
             using (var processor = new StorageHandlerProcessorForGetScratchBufferReport(this))
                 await processor.ExecuteAsync();
         }
         
-        [RavenAction("/databases/*/debug/storage/environment/free-space-snapshot", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/debug/storage/environment/free-space-snapshot", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns free-space-snapshot information.")]
         public async Task GetFreeSpaceInfo()
         {
             var name = GetStringQueryString("name", false) ?? Database.Name;

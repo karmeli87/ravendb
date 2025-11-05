@@ -6,7 +6,7 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class ExpirationHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/expiration/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/expiration/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns document expiration configuration.")]
         public async Task GetExpirationConfig()
         {
             using (var processor = new ExpirationHandlerProcessorForGet(this))

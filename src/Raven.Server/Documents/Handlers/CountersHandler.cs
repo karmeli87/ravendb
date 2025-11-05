@@ -677,7 +677,7 @@ namespace Raven.Server.Documents.Handlers
             }
         }
 
-        [RavenAction("/databases/*/counters", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/counters", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns counter values for specified documents.")]
         public async Task Get()
         {
             using (var processor = new CountersHandlerProcessorForGetCounters(this))

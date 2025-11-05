@@ -6,14 +6,14 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class ChangesHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/changes", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, DisableOnCpuCreditsExhaustion = true)]
+        [RavenAction("/databases/*/changes", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, DisableOnCpuCreditsExhaustion = true, Description = "Establishes a changes API connection.")]
         public async Task GetChanges()
         {
             using (var processor = new ChangesHandlerProcessorForGetChanges(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/changes/debug", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/changes/debug", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns debugging information for changes API.")]
         public async Task GetConnectionsDebugInfo()
         {
             using (var processor = new ChangesHandlerProcessorForGetConnectionsDebugInfo(this))

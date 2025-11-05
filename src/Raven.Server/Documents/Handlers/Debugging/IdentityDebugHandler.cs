@@ -6,7 +6,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 {
     public sealed class IdentityDebugHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/debug/identities", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/debug/identities", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns debugging information for identity values.")]
         public async Task GetIdentities()
         {
             using (var processor = new IdentityDebugHandlerProcessorForGetIdentities(this))

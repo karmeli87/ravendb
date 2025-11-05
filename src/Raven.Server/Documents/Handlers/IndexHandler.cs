@@ -60,7 +60,7 @@ namespace Raven.Server.Documents.Handlers
             NoContentStatus();
         }
 
-        [RavenAction("/databases/*/indexes/source", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/indexes/source", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns the source code/definition of specified indexes.")]
         public async Task Source()
         {
             using (var processor = new IndexHandlerProcessorForSource(this))
@@ -73,7 +73,7 @@ namespace Raven.Server.Documents.Handlers
             public IndexHistoryEntry[] History { get; set; }
         }
 
-        [RavenAction("/databases/*/indexes/history", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/indexes/history", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns the modification history of indexes in the database.")]
         public async Task GetIndexHistory()
         {
             using (var processor = new IndexHandlerProcessorForGetIndexHistory<DocumentsOperationContext>(this))
@@ -87,14 +87,14 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/debug", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/indexes/debug", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns debugging information for indexes.")]
         public async Task Debug()
         {
             using (var processor = new IndexHandlerProcessorForDebug(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/indexes", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns a list of all indexes in the database.")]
         public async Task GetAll()
         {
             var namesOnly = GetBoolValueQueryString("namesOnly", required: false) ?? false;
@@ -111,21 +111,21 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/indexes/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns statistics for all indexes including entry counts and performance metrics.")]
         public async Task Stats()
         {
             using (var processor = new IndexHandlerProcessorForGetDatabaseIndexStatistics(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/staleness", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/indexes/staleness", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Checks if indexes are stale and returns staleness information.")]
         public async Task Stale()
         {
             using (var processor = new IndexHandlerProcessorForStale(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/progress", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/indexes/progress", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns indexing progress information for ongoing index operations.")]
         public async Task Progress()
         {
             using (var processor = new IndexHandlerProcessorForProgress(this))
@@ -153,14 +153,14 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/c-sharp-index-definition", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/indexes/c-sharp-index-definition", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Generates C# code for index definitions.")]
         public async Task GenerateCSharpIndexDefinition()
         {
             using (var processor = new IndexProcessorForGenerateCSharpIndexDefinition(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/status", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/indexes/status", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns the status of all indexes (enabled, disabled, paused, etc.).")]
         public async Task Status()
         {
             using (var processor = new IndexHandlerProcessorForGetIndexesStatus(this))
@@ -188,7 +188,7 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/errors", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/indexes/errors", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns errors that occurred during indexing operations.")]
         public async Task GetErrors()
         {
             using (var processor = new IndexHandlerProcessorForGetErrors(this))
@@ -202,28 +202,28 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/total-time", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/indexes/total-time", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns total indexing time statistics.")]
         public async Task TotalTime()
         {
             using (var processor = new IndexHandlerProcessorForTotalTime(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/performance", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/indexes/performance", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns detailed performance metrics for index operations.")]
         public async Task Performance()
         {
             using (var processor = new IndexHandlerProcessorForPerformance(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/performance/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true)]
+        [RavenAction("/databases/*/indexes/performance/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, Description = "Returns live performance metrics for index operations.")]
         public async Task PerformanceLive()
         {
             using (var processor = new IndexHandlerProcessorForPerformanceLive(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/suggest-index-merge", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/indexes/suggest-index-merge", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Suggests indexes that could be merged to improve performance.")]
         public async Task SuggestIndexMerge()
         {
             using (var processor = new IndexHandlerProcessorForSuggestIndexMerge(this))
@@ -359,7 +359,7 @@ namespace Raven.Server.Documents.Handlers
 
         private static readonly int DefaultInputSizeForTestingJavaScriptIndex = 10;
 
-        [RavenAction("/databases/*/indexes/debug/metadata", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/indexes/debug/metadata", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns debug metadata information for indexes.")]
         public async Task Metadata()
         {
             using (var context = QueryOperationContext.Allocate(Database, needsServerContext: true))
@@ -398,7 +398,7 @@ namespace Raven.Server.Documents.Handlers
             }
         }
 
-        [RavenAction("/databases/*/indexes/auto/convert", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/indexes/auto/convert", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns information about auto-index to static index conversion.")]
         public async Task ConvertAutoIndex()
         {
             using (var processor = new IndexHandlerProcessorForConvertAutoIndex<DatabaseRequestHandler, DocumentsOperationContext>(this))

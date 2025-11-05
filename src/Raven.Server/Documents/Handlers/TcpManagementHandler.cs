@@ -6,7 +6,7 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class TcpManagementHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/tcp", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/tcp", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns TCP connection information.")]
         public async Task GetAll()
         {
             using (var processor = new TcpManagementHandlerProcessorForGetAll(this))

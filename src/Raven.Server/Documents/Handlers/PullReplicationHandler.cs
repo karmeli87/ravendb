@@ -27,7 +27,7 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/admin/tasks/pull-replication/hub/access", "GET", AuthorizationStatus.DatabaseAdmin)]
+        [RavenAction("/databases/*/admin/tasks/pull-replication/hub/access", "GET", AuthorizationStatus.DatabaseAdmin, Description = "Returns access information.")]
         public async Task ListHubAccess()
         {
             using (var processor = new PullReplicationHandlerProcessorForGetListHubAccess(this))

@@ -5,7 +5,7 @@ using Raven.Server.Routing;
 namespace Raven.Server.Documents.Handlers;
 public class RevisionsBinCleanerHandler : DatabaseRequestHandler
 {
-    [RavenAction("/databases/*/revisions/bin-cleaner/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+    [RavenAction("/databases/*/revisions/bin-cleaner/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns config information.")]
     public async Task GetRevisionsBinConfig()
     {
         using (var processor = new RevisionsBinCleanerHandlerProcessorForGetConfiguration(this))

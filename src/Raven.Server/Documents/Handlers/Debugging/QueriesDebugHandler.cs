@@ -13,14 +13,14 @@ namespace Raven.Server.Documents.Handlers.Debugging
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/debug/queries/running", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/debug/queries/running", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns currently running queries.")]
         public async Task RunningQueries()
         {
             using (var processor = new QueriesDebugHandlerProcessorForRunningQueries(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/debug/queries/cache/list", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/debug/queries/cache/list", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns list information.")]
         public async Task QueriesCacheList()
         {
             using (var processor = new QueriesDebugHandlerProcessorForQueriesCacheList(this))

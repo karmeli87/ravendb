@@ -23,7 +23,7 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class LegacyReplicationHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/replication/lastEtag", "GET", AuthorizationStatus.ValidUser, EndpointType.Write)]
+        [RavenAction("/databases/*/replication/lastEtag", "GET", AuthorizationStatus.ValidUser, EndpointType.Write, Description = "Returns lastEtag information.")]
         public async Task LastEtag()
         {
             using (ContextPool.AllocateOperationContext(out DocumentsOperationContext context))

@@ -7,7 +7,7 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class AnalyzersHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/analyzers", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/analyzers", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns a list of custom analyzers defined in the database.")]
         public async Task Get()
         {
             using (var processor = new AnalyzersHandlerProcessorForGet<DocumentsOperationContext>(this))

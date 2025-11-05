@@ -25,14 +25,14 @@ namespace Raven.Server.Documents.Handlers
             }
         }
         
-        [RavenAction("/databases/*/docs/size", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/docs/size", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns the size of documents.")]
         public async Task GetDocSize()
         {
             using (var processor = new DocumentHandlerProcessorForGetDocSize(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/docs", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/docs", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns documents from the database.")]
         public Task Get()
         {
             // Disposal of the processor is handled in the `ExecuteAsTaskAsync` method.
@@ -76,7 +76,7 @@ namespace Raven.Server.Documents.Handlers
             }
         }
 
-        [RavenAction("/databases/*/docs/class", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true)]
+        [RavenAction("/databases/*/docs/class", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Returns the C# class definition for a document type.")]
         public async Task GenerateClassFromDocument()
         {
             using (var processor = new DocumentHandlerProcessorForGenerateClassFromDocument(this))

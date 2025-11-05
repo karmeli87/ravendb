@@ -24,7 +24,7 @@ public class AiAgentHandler : DatabaseRequestHandler
         }
     }
 
-    [RavenAction("/databases/*/admin/ai/agent", "GET", AuthorizationStatus.DatabaseAdmin)]
+    [RavenAction("/databases/*/admin/ai/agent", "GET", AuthorizationStatus.DatabaseAdmin, Description = "Returns agent information.")]
     public async Task GetAiAgentConfiguration()
     {
         using (var processor = new AiAgentProcessorForGetAiAgent<DatabaseRequestHandler, DocumentsOperationContext>(this))

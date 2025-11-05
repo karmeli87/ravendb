@@ -6,14 +6,14 @@ namespace Raven.Server.Documents.Handlers.Admin
 {
     public sealed class AdminConfigurationHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/admin/configuration/settings", "GET", AuthorizationStatus.DatabaseAdmin, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/admin/configuration/settings", "GET", AuthorizationStatus.DatabaseAdmin, IsDebugInformationEndpoint = true, Description = "Returns settings information.")]
         public async Task GetSettings()
         {
             using (var processor = new AdminConfigurationHandlerProcessorForGetSettings(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/admin/record", "GET", AuthorizationStatus.DatabaseAdmin)]
+        [RavenAction("/databases/*/admin/record", "GET", AuthorizationStatus.DatabaseAdmin, Description = "Returns record information.")]
         public async Task GetDatabaseRecord()
         {
             Database.ForTestingPurposes?.DatabaseRecordLoadHold?.WaitOne();

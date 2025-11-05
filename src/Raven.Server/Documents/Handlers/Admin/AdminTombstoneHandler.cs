@@ -13,7 +13,7 @@ namespace Raven.Server.Documents.Handlers.Admin
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/admin/tombstones/state", "GET", AuthorizationStatus.DatabaseAdmin, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/admin/tombstones/state", "GET", AuthorizationStatus.DatabaseAdmin, IsDebugInformationEndpoint = true, Description = "Returns state information.")]
         public async Task State()
         {
             using (var processor = new AdminTombstoneHandlerProcessorForState(this))

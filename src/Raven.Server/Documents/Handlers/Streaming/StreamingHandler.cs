@@ -7,14 +7,14 @@ namespace Raven.Server.Documents.Handlers.Streaming
 {
     public sealed class StreamingHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/streams/docs", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true)]
+        [RavenAction("/databases/*/streams/docs", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Streams documents from the database.")]
         public async Task StreamDocsGet()
         {
             using (var processor = new StreamingHandlerProcessorForGetDocs(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/streams/timeseries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/streams/timeseries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Streams time series data.")]
         public async Task Stream()
         {
             using (var processor = new StreamingHandlerProcessorForGetTimeSeries(this))
@@ -29,7 +29,7 @@ namespace Raven.Server.Documents.Handlers.Streaming
             return Task.CompletedTask;
         }
 
-        [RavenAction("/databases/*/streams/queries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true)]
+        [RavenAction("/databases/*/streams/queries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Streams query results.")]
         public async Task StreamQueryGet()
         {
             using (var processor = new StreamingHandlerProcessorForGetStreamQuery(this, HttpMethod.Get))

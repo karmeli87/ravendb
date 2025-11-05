@@ -6,7 +6,7 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class RefreshHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/refresh/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/refresh/config", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns refresh configuration.")]
         public async Task GetRefreshConfiguration()
         {
             using (var processor = new RefreshHandlerProcessorForGetRefreshConfiguration(this))

@@ -24,7 +24,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 
         public const string TotalTimeMSecondsSuffix = "mSecs";
         
-        [RavenAction("/databases/*/admin/debug/txinfo", "GET", AuthorizationStatus.DatabaseAdmin, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/admin/debug/txinfo", "GET", AuthorizationStatus.DatabaseAdmin, IsDebugInformationEndpoint = true, Description = "Returns txinfo information.")]
         public async Task TxInfo()
         {
             var results = new List<TransactionInfo>();
@@ -72,7 +72,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             };
         }
 
-        [RavenAction("/databases/*/admin/debug/cluster/txinfo", "GET", AuthorizationStatus.DatabaseAdmin, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/admin/debug/cluster/txinfo", "GET", AuthorizationStatus.DatabaseAdmin, IsDebugInformationEndpoint = true, Description = "Returns txinfo information.")]
         public async Task ClusterTxInfo()
         {
             using (var processor = new TransactionDebugHandlerProcessorForGetClusterInfo(this))

@@ -9,7 +9,7 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class IoMetricsHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/debug/io-metrics", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/debug/io-metrics", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns io-metrics information.")]
         public async Task Get()
         {
             using (ContextPool.AllocateOperationContext(out JsonOperationContext context))
@@ -20,7 +20,7 @@ namespace Raven.Server.Documents.Handlers
             }
         }
 
-        [RavenAction("/databases/*/debug/io-metrics/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true)]
+        [RavenAction("/databases/*/debug/io-metrics/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, Description = "Returns live information.")]
         public async Task Live()
         {
             using (var processor = new IoMetricsHandlerProcessorForLive(this))
