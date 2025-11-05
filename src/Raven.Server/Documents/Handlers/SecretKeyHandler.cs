@@ -17,7 +17,7 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class SecretKeyHandler : ServerRequestHandler
     {
-        [RavenAction("/admin/secrets", "GET", AuthorizationStatus.Operator)]
+        [RavenAction("/admin/secrets", "GET", AuthorizationStatus.Operator, Description = "Returns secrets information.")]
         public async Task GetKeys()
         {
             using (Server.ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext ctx))
@@ -35,13 +35,13 @@ namespace Raven.Server.Documents.Handlers
             }
         }
 
-        [RavenAction("/admin/secrets/generate", "GET", AuthorizationStatus.Operator)]
+        [RavenAction("/admin/secrets/generate", "GET", AuthorizationStatus.Operator, Description = "Returns generate information.")]
         public Task LegacyGenerate()
         {
             return Generate();
         }
 
-        [RavenAction("/secrets/generate", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/secrets/generate", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns generate information.")]
         public unsafe Task Generate()
         {
             HttpContext.Response.ContentType = "application/base64";

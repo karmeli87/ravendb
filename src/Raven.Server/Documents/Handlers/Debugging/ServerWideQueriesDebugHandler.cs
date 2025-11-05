@@ -12,7 +12,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 {
     public sealed class ServerWideQueriesDebugHandler : ServerRequestHandler
     {
-        [RavenAction("/debug/queries/running/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/debug/queries/running/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns live information.")]
         public async Task RunningQueriesLive()
         {
             var allowedDbs = await GetAllowedDbsAsync(null, requireAdmin: false, requireWrite: false);

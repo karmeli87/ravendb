@@ -11,7 +11,7 @@ namespace Raven.Server.Documents.Handlers.Admin
 {
     public sealed class AdminMemoryHandler : ServerRequestHandler
     {
-        [RavenAction("/admin/memory/gc", "GET", AuthorizationStatus.Operator)]
+        [RavenAction("/admin/memory/gc", "GET", AuthorizationStatus.Operator, Description = "Returns gc information.")]
         public async Task CollectGarbage()
         {
             var loh = GetBoolValueQueryString("loh", required: false) ?? false;

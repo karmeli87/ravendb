@@ -43,7 +43,7 @@ namespace Raven.Server.Documents.Handlers.Admin
                 throw new InvalidOperationException("Configuration cannot be persisted because logs were configured via external configuration file, please modify the file directly.");
         }
 
-        [RavenAction("/admin/logs/configuration", "GET", AuthorizationStatus.Operator)]
+        [RavenAction("/admin/logs/configuration", "GET", AuthorizationStatus.Operator, Description = "Returns logging configuration.")]
         public async Task GetConfiguration()
         {
             AssertClientVersionForLogsConfiguration();
@@ -116,14 +116,14 @@ namespace Raven.Server.Documents.Handlers.Admin
             NoContentStatus();
         }
 
-        [RavenAction("/admin/logs/watch", "GET", AuthorizationStatus.Operator)]
+        [RavenAction("/admin/logs/watch", "GET", AuthorizationStatus.Operator, Description = "Watches log entries in real-time.")]
         public async Task RegisterForLogs()
         {
             using (var socket = await HttpContext.WebSockets.AcceptWebSocketAsync())
                 await AdminLogsTarget.RegisterAsync(socket, ServerStore.ServerShutdown);
         }
 
-        [RavenAction("/admin/logs/download", "GET", AuthorizationStatus.Operator)]
+        [RavenAction("/admin/logs/download", "GET", AuthorizationStatus.Operator, Description = "Returns download information.")]
         public async Task Download()
         {
             var contentDisposition = $"attachment; filename={DateTime.UtcNow:yyyy-MM-dd H:mm:ss} - Node [{ServerStore.NodeTag}] - Logs.zip";
@@ -213,7 +213,7 @@ namespace Raven.Server.Documents.Handlers.Admin
             }
         }
 
-        [RavenAction("/admin/event-listener/configuration", "GET", AuthorizationStatus.Operator)]
+        [RavenAction("/admin/event-listener/configuration", "GET", AuthorizationStatus.Operator, Description = "Returns configuration information.")]
         public async Task GetEventListenerConfiguration()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out JsonOperationContext context))

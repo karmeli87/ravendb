@@ -125,7 +125,7 @@ namespace Raven.Server.Documents.Handlers.Admin
             return Task.CompletedTask;
         }
 
-        [RavenAction("/admin/cluster/observer/decisions", "GET", AuthorizationStatus.Operator, CorsMode = CorsMode.Cluster, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/cluster/observer/decisions", "GET", AuthorizationStatus.Operator, CorsMode = CorsMode.Cluster, IsDebugInformationEndpoint = true, Description = "Returns decisions information.")]
         public async Task GetObserverDecisions()
         {
             if (ServerStore.IsLeader())
@@ -150,14 +150,14 @@ namespace Raven.Server.Documents.Handlers.Admin
             RedirectToLeader();
         }
 
-        [RavenAction("/admin/cluster/log", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/cluster/log", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns log information.")]
         public async Task GetLogs()
         {
             using (var processor = new RachisAdminHandlerProcessorForGetClusterLogs(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/admin/cluster/log/entry", "GET", AuthorizationStatus.Operator)]
+        [RavenAction("/admin/cluster/log/entry", "GET", AuthorizationStatus.Operator, Description = "Returns entry information.")]
         public async Task GetLogByIndex()
         {
             var fromIndex = GetLongQueryString("index");
@@ -178,7 +178,7 @@ namespace Raven.Server.Documents.Handlers.Admin
             }
         }
 
-        [RavenAction("/admin/debug/cluster/history-logs", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/cluster/history-logs", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns history-logs information.")]
         public async Task GetHistoryLogs()
         {
             using (ServerStore.Engine.ContextPool.AllocateOperationContext(out ClusterOperationContext context))
@@ -191,7 +191,7 @@ namespace Raven.Server.Documents.Handlers.Admin
             }
         }
 
-        [RavenAction("/cluster/node-info", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/cluster/node-info", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns node-info information.")]
         public async Task GetNodeInfo()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
@@ -205,7 +205,7 @@ namespace Raven.Server.Documents.Handlers.Admin
             }
         }
 
-        [RavenAction("/cluster/topology", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, CheckForChanges = false)]
+        [RavenAction("/cluster/topology", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, CheckForChanges = false, Description = "Returns topology information.")]
         public async Task GetClusterTopology()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext context))
@@ -280,7 +280,7 @@ namespace Raven.Server.Documents.Handlers.Admin
             public long LeaderShipDuration { get; set; }
         }
 
-        [RavenAction("/admin/cluster/maintenance-stats", "GET", AuthorizationStatus.Operator)]
+        [RavenAction("/admin/cluster/maintenance-stats", "GET", AuthorizationStatus.Operator, Description = "Returns maintenance-stats information.")]
         public async Task ClusterMaintenanceStats()
         {
             if (ServerStore.LeaderTag == null)

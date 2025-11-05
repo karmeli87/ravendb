@@ -9,7 +9,7 @@ namespace Raven.Server.Web.Studio
 {
     public sealed class StudioIndexHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/studio/indexes/errors-count", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/studio/indexes/errors-count", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns errors-count information.")]
         public async Task GetIndexErrorsCount()
         {
             using (var processor = new StudioIndexHandlerProcessorForGetIndexErrorsCount(this))

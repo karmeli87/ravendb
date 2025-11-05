@@ -7,7 +7,7 @@ namespace Raven.Server.Documents.Handlers.Admin
 {
     public sealed class AdminScriptRunnersDebugInfoHandler : ServerRequestHandler
     {
-        [RavenAction("/admin/debug/script-runners", "GET", AuthorizationStatus.Operator)]
+        [RavenAction("/admin/debug/script-runners", "GET", AuthorizationStatus.Operator, Description = "Returns script runner debugging information.")]
         public async Task GetJSAdminDebugInfo()
         {
             var detailed = GetBoolValueQueryString("detailed", required: false) ?? false;

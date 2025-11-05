@@ -44,7 +44,7 @@ public partial class DebugPackageAnalyzerHandler : ServerRequestHandler
         return NoContent();
     }
 
-    [RavenAction("/debug/info-package/analyzer/summary", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+    [RavenAction("/debug/info-package/analyzer/summary", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns summary information.")]
     public async Task GetSummary()
     {
         var packageId = GetQueryStringValueAndAssertIfSingleAndNotEmpty("packageId");
@@ -59,7 +59,7 @@ public partial class DebugPackageAnalyzerHandler : ServerRequestHandler
         }
     }
 
-    [RavenAction("/debug/info-package/analyzer/summary/node", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+    [RavenAction("/debug/info-package/analyzer/summary/node", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns node information.")]
     public async Task GetNodeSummary()
     {
         var packageId = GetQueryStringValueAndAssertIfSingleAndNotEmpty("packageId");

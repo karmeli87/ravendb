@@ -19,7 +19,7 @@ namespace Raven.Server.Web.System
 {
     public sealed class OngoingTasksHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/tasks", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/tasks", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns tasks information.")]
         public async Task GetOngoingTasks()
         {
             using (var processor = new OngoingTasksHandlerProcessorForGetOngoingTasks(this))
@@ -47,14 +47,14 @@ namespace Raven.Server.Web.System
             };
         }
 
-        [RavenAction("/databases/*/admin/periodic-backup/config", "GET", AuthorizationStatus.DatabaseAdmin)]
+        [RavenAction("/databases/*/admin/periodic-backup/config", "GET", AuthorizationStatus.DatabaseAdmin, Description = "Returns config information.")]
         public async Task GetConfiguration()
         {
             using (var processor = new OngoingTasksHandlerProcessorForGetPeriodicBackupConfiguration<DatabaseRequestHandler, DocumentsOperationContext>(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/admin/debug/periodic-backup/timers", "GET", AuthorizationStatus.DatabaseAdmin)]
+        [RavenAction("/databases/*/admin/debug/periodic-backup/timers", "GET", AuthorizationStatus.DatabaseAdmin, Description = "Returns timers information.")]
         public async Task GetPeriodicBackupTimers()
         {
             using (var processor = new OngoingTasksHandlerProcessorForGetPeriodicBackupTimers(this))
@@ -68,7 +68,7 @@ namespace Raven.Server.Web.System
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/admin/backup-data-directory", "GET", AuthorizationStatus.DatabaseAdmin)]
+        [RavenAction("/databases/*/admin/backup-data-directory", "GET", AuthorizationStatus.DatabaseAdmin, Description = "Returns backup-data-directory information.")]
         public async Task FullBackupDataDirectory()
         {
             using (var processor = new OngoingTasksHandlerProcessorForGetFullBackupDataDirectory<DatabaseRequestHandler, DocumentsOperationContext>(this))
@@ -82,7 +82,7 @@ namespace Raven.Server.Web.System
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/admin/backup/running", "GET", AuthorizationStatus.DatabaseAdmin, CorsMode = CorsMode.Cluster)]
+        [RavenAction("/databases/*/admin/backup/running", "GET", AuthorizationStatus.DatabaseAdmin, CorsMode = CorsMode.Cluster, Description = "Returns running information.")]
         public async Task GetBackupRunningStatus()
         {
             using (var processor = new OngoingTasksHandlerProcessorForGetRunningBackupOperationStatus(this))
@@ -103,7 +103,7 @@ namespace Raven.Server.Web.System
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/admin/connection-strings", "GET", AuthorizationStatus.DatabaseAdmin)]
+        [RavenAction("/databases/*/admin/connection-strings", "GET", AuthorizationStatus.DatabaseAdmin, Description = "Returns connection-strings information.")]
         public async Task GetConnectionStrings()
         {
             using (var processor = new OngoingTasksHandlerProcessorForGetConnectionString<DatabaseRequestHandler, DocumentsOperationContext>(this))
@@ -132,14 +132,14 @@ namespace Raven.Server.Web.System
         }
 
         // Get Info about a specific task - For Edit View in studio - Each task should return its own specific object
-        [RavenAction("/databases/*/task", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/task", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns task information.")]
         public async Task GetOngoingTaskInfo()
         {
             using (var processor = new OngoingTasksHandlerProcessorForGetOngoingTask(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/tasks/pull-replication/hub", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/tasks/pull-replication/hub", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns hub information.")]
         public async Task GetHubTasksInfo()
         {
             using (var processor = new OngoingTasksHandlerProcessorForGetPullReplicationHubTasksInfo(this))

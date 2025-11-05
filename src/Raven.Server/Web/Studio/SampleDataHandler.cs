@@ -16,7 +16,7 @@ namespace Raven.Server.Web.Studio
             }
         }
 
-        [RavenAction("/databases/*/studio/sample-data/classes", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/studio/sample-data/classes", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns classes information.")]
         public async Task GetSampleDataClasses()
         {
             using (var processor = new SampleDataHandlerProcessorForGetSampleDataClasses(this))

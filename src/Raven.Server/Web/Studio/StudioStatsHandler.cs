@@ -8,7 +8,7 @@ namespace Raven.Server.Web.Studio
 {
     public sealed class StudioStatsHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/studio/footer/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/studio/footer/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns stats information.")]
         public async Task GetFooterStats()
         {
             using (var processor = new StudioStatsHandlerProcessorForGetFooterStats(this))
@@ -17,7 +17,7 @@ namespace Raven.Server.Web.Studio
             }
         }
 
-        [RavenAction("/databases/*/studio/license/limits-usage", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/studio/license/limits-usage", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns limits-usage information.")]
         public async Task GetLicenseLimitsUsage()
         {
             using (var processor = new StudioStatsHandlerProcessorForGetLicenseLimitsUsage<DocumentsOperationContext>(this))

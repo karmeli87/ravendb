@@ -72,7 +72,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 
         private static readonly RavenLogger Logger = RavenLogManager.Instance.GetLoggerForServer<ServerWideDebugInfoPackageHandler>();
 
-        [RavenAction("/admin/debug/remote-cluster-info-package", "GET", AuthorizationStatus.Operator)]
+        [RavenAction("/admin/debug/remote-cluster-info-package", "GET", AuthorizationStatus.Operator, Description = "Returns remote-cluster-info-package information.")]
         public async Task GetClusterWideInfoPackageForRemote()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out TransactionOperationContext transactionOperationContext))
@@ -105,7 +105,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/admin/debug/cluster-info-package", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/cluster-info-package", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Generates a cluster debug information package.")]
         public async Task GetClusterWideInfoPackage()
         {
             var contentDisposition = $"attachment; filename={DateTime.UtcNow:yyyy-MM-dd H-mm-ss} Cluster Wide.zip";
@@ -178,7 +178,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/admin/debug/info-package", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/info-package", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Generates a server debug information package.")]
         public async Task GetInfoPackage()
         {
             var contentDisposition = $"attachment; filename={DateTime.UtcNow:yyyy-MM-dd H-mm-ss} - Node [{ServerStore.NodeTag}].zip";

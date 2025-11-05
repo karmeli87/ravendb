@@ -14,7 +14,7 @@ namespace Raven.Server.Web.Studio
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/studio-tasks/indexes/configuration/defaults", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/studio-tasks/indexes/configuration/defaults", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns defaults information.")]
         public async Task GetIndexDefaults()
         {
             using (var processor = new StudioDatabaseTasksHandlerProcessorForGetIndexDefaults(this))
@@ -28,7 +28,7 @@ namespace Raven.Server.Web.Studio
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/studio-tasks/suggest-conflict-resolution", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/studio-tasks/suggest-conflict-resolution", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns suggest-conflict-resolution information.")]
         public async Task SuggestConflictResolution()
         {
             using (var processor = new StudioDatabaseTasksHandlerProcessorForGetSuggestConflictResolution(this))

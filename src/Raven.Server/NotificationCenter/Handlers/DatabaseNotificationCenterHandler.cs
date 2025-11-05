@@ -23,7 +23,7 @@ namespace Raven.Server.NotificationCenter.Handlers
 
         private static readonly short SupportedFilterFlags = (short)(NotificationTypeParameter.Alert | NotificationTypeParameter.PerformanceHint);
 
-        [RavenAction("/databases/*/notifications", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/notifications", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, IsDebugInformationEndpoint = true, Description = "Returns notifications information.")]
         public async Task GetNotifications()
         {
             var postponed = GetBoolValueQueryString("postponed", required: false) ?? true;
@@ -116,7 +116,7 @@ namespace Raven.Server.NotificationCenter.Handlers
             }
         }
 
-        [RavenAction("/databases/*/notification-center/watch", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true)]
+        [RavenAction("/databases/*/notification-center/watch", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, Description = "Returns watch information.")]
         public async Task Watch()
         {
             using (var processor = new DatabaseNotificationCenterHandlerProcessorForWatch(this))
@@ -137,7 +137,7 @@ namespace Raven.Server.NotificationCenter.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/notification-center/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/notification-center/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns stats information.")]
         public async Task Stats()
         {
             using (var processor = new DatabaseNotificationCenterHandlerProcessorForStats(this))

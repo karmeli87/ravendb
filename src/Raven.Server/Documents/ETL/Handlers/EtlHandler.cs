@@ -6,35 +6,35 @@ namespace Raven.Server.Documents.ETL.Handlers
 {
     public sealed class EtlHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/etl/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/etl/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns ETL (Extract, Transform, Load) statistics.")]
         public async Task Stats()
         {
             using (var processor = new EtlHandlerProcessorForStats(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/etl/debug/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/etl/debug/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns stats information.")]
         public async Task DebugStats()
         {
             using (var processor = new EtlHandlerProcessorForDebugStats(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/etl/performance", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/etl/performance", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns ETL performance metrics.")]
         public async Task Performance()
         {
             using (var processor = new EtlHandlerProcessorForPerformance(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/etl/performance/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true)]
+        [RavenAction("/databases/*/etl/performance/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, Description = "Returns live information.")]
         public async Task PerformanceLive()
         {
             using (var processor = new EtlHandlerProcessorForPerformanceLive(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/etl/progress", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/databases/*/etl/progress", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns ETL progress information.")]
         public async Task Progress()
         {
             using (var processor = new EtlHandlerProcessorForProgress(this))

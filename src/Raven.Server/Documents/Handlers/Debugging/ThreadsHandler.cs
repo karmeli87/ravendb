@@ -24,7 +24,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 {
     public sealed class ThreadsHandler : ServerRequestHandler
     {
-        [RavenAction("/admin/debug/threads/stack-trace", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/threads/stack-trace", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns stack-trace information.")]
         public async Task StackTrace()
         {
             if (PlatformDetails.RunningOnMacOsx)
@@ -62,7 +62,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/admin/debug/threads/runaway", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/threads/runaway", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns information about runaway threads.")]
         public async Task RunawayThreads()
         {
             var samplesCount = GetIntValueQueryString("samplesCount", required: false) ?? 1;

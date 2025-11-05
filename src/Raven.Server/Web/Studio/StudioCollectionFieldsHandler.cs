@@ -7,7 +7,7 @@ namespace Raven.Server.Web.Studio
 {
     public sealed class StudioCollectionFieldsHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/studio/collections/fields", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/studio/collections/fields", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns fields information.")]
         public async Task GetCollectionFields()
         {
             using (var processor = new StudioCollectionFieldsHandlerProcessorForGetCollectionFields(this))

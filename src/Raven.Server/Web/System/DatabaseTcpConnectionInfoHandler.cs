@@ -8,7 +8,7 @@ namespace Raven.Server.Web.System
 {
     public sealed class DatabaseTcpConnectionInfoHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/info/tcp", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true)]
+        [RavenAction("/databases/*/info/tcp", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Returns tcp information.")]
         public async Task Get()
         {
             using (var processor = new DatabaseTcpConnectionInfoHandlerProcessorForGet<DocumentsOperationContext>(this))

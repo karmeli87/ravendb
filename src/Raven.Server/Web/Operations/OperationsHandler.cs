@@ -7,7 +7,7 @@ namespace Raven.Server.Web.Operations
 {
     public sealed class OperationsHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/operations/next-operation-id", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/operations/next-operation-id", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns next-operation-id information.")]
         public async Task GetNextOperationId()
         {
             using (var processor = new OperationsHandlerProcessorForGetNextOperationId(this))
@@ -21,14 +21,14 @@ namespace Raven.Server.Web.Operations
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/operations", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/operations", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns operations information.")]
         public async Task GetAll()
         {
             using (var processor = new OperationsHandlerProcessorForGetAll(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/operations/state", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/operations/state", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns state information.")]
         public async Task State()
         {
             using (var processor = new OperationsHandlerProcessorForState(this))

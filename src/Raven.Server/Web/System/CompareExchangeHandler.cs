@@ -8,7 +8,7 @@ namespace Raven.Server.Web.System
 {
     internal sealed class CompareExchangeHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/cmpxchg", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true)]
+        [RavenAction("/databases/*/cmpxchg", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Returns compare-exchange values.")]
         public async Task GetCompareExchangeValues()
         {
             using (var processor = new CompareExchangeHandlerProcessorForGetCompareExchangeValues(this))

@@ -24,7 +24,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 {
     public sealed class MemoryDebugHandler : ServerRequestHandler
     {
-        [RavenAction("/admin/debug/memory/gc", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/memory/gc", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns garbage collection memory information and statistics.")]
         public async Task GcInfo()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out JsonOperationContext context))
@@ -94,7 +94,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/admin/debug/memory/low-mem-log", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/memory/low-mem-log", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns low memory event log entries.")]
         public async Task LowMemLog()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out JsonOperationContext context))
@@ -108,13 +108,13 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/admin/debug/proc/status", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, IsPosixSpecificEndpoint = true)]
+        [RavenAction("/admin/debug/proc/status", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, IsPosixSpecificEndpoint = true, Description = "Returns Linux process status information from /proc/self/status.")]
         public async Task PosixMemStatus()
         {
             await WriteFile("/proc/self/status");
         }
 
-        [RavenAction("/admin/debug/proc/meminfo", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, IsPosixSpecificEndpoint = true)]
+        [RavenAction("/admin/debug/proc/meminfo", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, IsPosixSpecificEndpoint = true, Description = "Returns Linux memory information from /proc/meminfo.")]
         public async Task PosixMemInfo()
         {
             await WriteFile("/proc/meminfo");
@@ -177,7 +177,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             return djv;
         }
 
-        [RavenAction("/admin/debug/memory/smaps", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = false)]
+        [RavenAction("/admin/debug/memory/smaps", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = false, Description = "Returns detailed memory mapping information (smaps) for the server process.")]
         public async Task MemorySmaps()
         {
             if (PlatformDetails.RunningOnLinux == false)
@@ -259,7 +259,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/admin/debug/memory/stats", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/memory/stats", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns detailed memory statistics including thread and mapping information.")]
         public async Task MemoryStats()
         {
             var includeThreads = GetBoolValueQueryString("includeThreads", required: false) ?? true;
@@ -274,7 +274,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/admin/debug/memory/encryption-buffer-pool", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/memory/encryption-buffer-pool", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns statistics for the encryption buffer pool.")]
         public async Task EncryptionBufferPoolStats()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out JsonOperationContext context))

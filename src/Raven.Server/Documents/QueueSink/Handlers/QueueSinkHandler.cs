@@ -31,7 +31,7 @@ public class QueueSinkHandler : DatabaseRequestHandler
         }
     }
 
-    [RavenAction("/databases/*/queue-sink/performance/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true)]
+    [RavenAction("/databases/*/queue-sink/performance/live", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, SkipUsagesCount = true, Description = "Returns live information.")]
     public async Task PerformanceLive()
     {
         using (var webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync())

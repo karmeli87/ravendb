@@ -12,7 +12,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 {
     public sealed class ProcStatsHandler : ServerRequestHandler
     {
-        [RavenAction("/admin/debug/cpu/stats", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/cpu/stats", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns stats information.")]
         public async Task CpuStats()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out JsonOperationContext context))
@@ -26,7 +26,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/admin/debug/proc/stats", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/proc/stats", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns stats information.")]
         public async Task ProcStats()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out JsonOperationContext context))

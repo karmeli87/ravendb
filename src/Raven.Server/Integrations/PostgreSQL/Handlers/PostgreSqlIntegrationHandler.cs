@@ -8,14 +8,14 @@ namespace Raven.Server.Integrations.PostgreSQL.Handlers
 {
     public sealed class PostgreSqlIntegrationHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/admin/integrations/postgresql/server/status", "GET", AuthorizationStatus.DatabaseAdmin)]
+        [RavenAction("/databases/*/admin/integrations/postgresql/server/status", "GET", AuthorizationStatus.DatabaseAdmin, Description = "Returns status information.")]
         public async Task GetServerStatus()
         {
             using (var processor = new PostgreSqlIntegrationHandlerProcessorForGetServerStatus<DatabaseRequestHandler, DocumentsOperationContext>(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/admin/integrations/postgresql/users", "GET", AuthorizationStatus.DatabaseAdmin)]
+        [RavenAction("/databases/*/admin/integrations/postgresql/users", "GET", AuthorizationStatus.DatabaseAdmin, Description = "Returns users information.")]
         public async Task GetUsernamesList()
         {
             using (var processor = new PostgreSqlIntegrationHandlerProcessorForGetUsernamesList(this))

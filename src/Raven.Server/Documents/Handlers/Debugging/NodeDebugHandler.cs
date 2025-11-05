@@ -26,7 +26,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 {
     public sealed class NodeDebugHandler : ServerRequestHandler
     {
-        [RavenAction("/admin/debug/node/clear-http-clients-pool", "GET", AuthorizationStatus.ClusterAdmin)]
+        [RavenAction("/admin/debug/node/clear-http-clients-pool", "GET", AuthorizationStatus.ClusterAdmin, Description = "Returns clear-http-clients-pool information.")]
         public Task ClearHttpClientsPool()
         {
             DefaultRavenHttpClientFactory.Instance.Clear();
@@ -34,7 +34,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             return NoContent(HttpStatusCode.OK);
         }
 
-        [RavenAction("/admin/debug/node/remote-connections", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/node/remote-connections", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns remote connection information.")]
         public async Task ListRemoteConnections()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out JsonOperationContext context))
@@ -57,7 +57,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/admin/debug/node/engine-logs", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/node/engine-logs", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns storage engine log entries.")]
         public async Task ListRecentEngineLogs()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out JsonOperationContext context))
@@ -67,7 +67,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/admin/debug/node/state-change-history", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/node/state-change-history", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Returns state-change-history information.")]
         public async Task GetStateChangeHistory()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out JsonOperationContext context))
@@ -79,7 +79,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
             }
         }
 
-        [RavenAction("/admin/debug/node/ping", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true)]
+        [RavenAction("/admin/debug/node/ping", "GET", AuthorizationStatus.Operator, IsDebugInformationEndpoint = true, Description = "Pings the node for connectivity testing.")]
         public async Task PingTest()
         {
             var dest = GetStringQueryString("url", false) ?? GetStringQueryString("node", false);

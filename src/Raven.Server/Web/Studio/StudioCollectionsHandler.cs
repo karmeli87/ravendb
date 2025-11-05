@@ -9,7 +9,7 @@ namespace Raven.Server.Web.Studio
 {
     public sealed class StudioCollectionsHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/studio/collections/preview", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/studio/collections/preview", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns preview information.")]
         public async Task PreviewCollection()
         {
             using (var processor = new StudioCollectionsHandlerProcessorForPreviewCollection(this, Database))
@@ -23,14 +23,14 @@ namespace Raven.Server.Web.Studio
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/studio/revisions/preview", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/studio/revisions/preview", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns preview information.")]
         public async Task PreviewRevisions()
         {
             using (var processor = new StudioCollectionsHandlerProcessorForPreviewRevisions(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/studio/revisions/ids", "GET", AuthorizationStatus.ValidUser, EndpointType.Read)]
+        [RavenAction("/databases/*/studio/revisions/ids", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns ids information.")]
         public async Task GetRevisionsIdsByPrefix()
         {
             using (var processor = new StudioCollectionsHandlerProcessorForRevisionsIds(this))

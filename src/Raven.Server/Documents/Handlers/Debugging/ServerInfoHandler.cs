@@ -9,7 +9,7 @@ namespace Raven.Server.Documents.Handlers.Debugging
 {
     public sealed class ServerInfoHandler : ServerRequestHandler
     {
-        [RavenAction("/debug/server-id", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true)]
+        [RavenAction("/debug/server-id", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns server-id information.")]
         public async Task ServerId()
         {
             using (ServerStore.ContextPool.AllocateOperationContext(out JsonOperationContext context))
