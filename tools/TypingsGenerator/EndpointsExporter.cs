@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using Raven.Server;
 using Raven.Server.Extensions;
 using Raven.Server.Routing;
@@ -15,15 +17,18 @@ namespace TypingsGenerator
     {
         private readonly Dictionary<string, Dictionary<string, string>> _globalEndpoints = new();
         private readonly Dictionary<string, Dictionary<string, string>> _databaseEndpoints = new();
+        private readonly List<EndpointMetadata> _endpointMetadata = new();
 
         private const string DatabaseEndpointPrefix = "/databases/*";
         private const string TargetFile = "endpoints.ts";
+        private const string MetadataFile = "endpoints-metadata.json";
 
         public void Create(string targetDir)
         {
             ScanAssembly(typeof(RavenServer).Assembly);
 
             WriteEndpointsFile(targetDir);
+            WriteMetadataFile(targetDir);
         }
 
         private void WriteEndpointsFile(string targetDir)
@@ -41,6 +46,18 @@ namespace TypingsGenerator
             builder.AppendLine("export = endpointConstants;");
             
             File.WriteAllText(Path.Combine(targetDir, TargetFile), builder.ToString());
+        }
+
+        private void WriteMetadataFile(string targetDir)
+        {
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+
+            var json = JsonSerializer.Serialize(_endpointMetadata, options);
+            File.WriteAllText(Path.Combine(targetDir, MetadataFile), json);
         }
 
         private void WriteGroup(Dictionary<string, Dictionary<string, string>> endpoints, StringBuilder builder, string groupName)
@@ -126,6 +143,32 @@ namespace TypingsGenerator
             var fieldName = UrlToFieldName(action);
 
             perHandlerDict[fieldName] = action.TrimEnd('$');
+
+            // Collect metadata for endpoints with descriptions or query parameters
+            if (!string.IsNullOrEmpty(actionAttribute.Description) || 
+                methodInfo.GetCustomAttributes<RavenActionQueryParameterAttribute>().Any())
+            {
+                var queryParams = methodInfo.GetCustomAttributes<RavenActionQueryParameterAttribute>()
+                    .Select(qp => new QueryParameterMetadata
+                    {
+                        Name = qp.Name,
+                        Required = qp.Required,
+                        Description = qp.Description,
+                        Type = qp.Type,
+                        DefaultValue = qp.DefaultValue
+                    })
+                    .ToList();
+
+                _endpointMetadata.Add(new EndpointMetadata
+                {
+                    Path = actionAttribute.Path,
+                    Method = actionAttribute.Method,
+                    Description = actionAttribute.Description,
+                    Handler = name,
+                    MethodName = methodInfo.Name,
+                    QueryParams = queryParams
+                });
+            }
         }
 
         private static string UrlToFieldName(string input)
@@ -168,5 +211,23 @@ namespace TypingsGenerator
             return input[0].ToString().ToLower(CultureInfo.InvariantCulture) + input.Substring(1);
         }
 
+        private class EndpointMetadata
+        {
+            public string Path { get; set; }
+            public string Method { get; set; }
+            public string Description { get; set; }
+            public string Handler { get; set; }
+            public string MethodName { get; set; }
+            public List<QueryParameterMetadata> QueryParams { get; set; }
+        }
+
+        private class QueryParameterMetadata
+        {
+            public string Name { get; set; }
+            public bool Required { get; set; }
+            public string Description { get; set; }
+            public string Type { get; set; }
+            public string DefaultValue { get; set; }
+        }
     }
 }
