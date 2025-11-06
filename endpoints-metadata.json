@@ -2,518 +2,182 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/102"
+      "@id": "endpoints/1"
     },
-    "Path": "/admin/cluster/log",
+    "Path": "/databases/*/stats/essential",
     "Method": "GET",
-    "Description": "Returns log information.",
-    "Handler": "RachisAdminHandler",
+    "Description": "Returns essential database statistics including document count, index count, and storage size.",
+    "Handler": "StatsHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/103"
+      "@id": "endpoints/2"
     },
-    "Path": "/admin/cluster/log/entry",
+    "Path": "/databases/*/stats/detailed",
     "Method": "GET",
-    "Description": "Returns entry information.",
-    "Handler": "RachisAdminHandler",
+    "Description": "Returns detailed database statistics with comprehensive metrics including all collection stats, index statistics, storage breakdown, document counts per collection, and performance data. More verbose than /stats endpoint.",
+    "Handler": "StatsHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/107"
+      "@id": "endpoints/3"
     },
-    "Path": "/admin/cluster/maintenance-stats",
+    "Path": "/databases/*/stats",
     "Method": "GET",
-    "Description": "Returns maintenance-stats information.",
-    "Handler": "RachisAdminHandler",
+    "Description": "Returns general database statistics including document count, index count, database size, last document etag, and cluster information. Essential for monitoring database health and size.",
+    "Handler": "StatsHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/101"
+      "@id": "endpoints/4"
     },
-    "Path": "/admin/cluster/observer/decisions",
+    "Path": "/databases/*/healthcheck",
     "Method": "GET",
-    "Description": "Returns decisions information.",
-    "Handler": "RachisAdminHandler",
-    "QueryParams": []
+    "Description": "Performs a health check on the database and returns its status.",
+    "Handler": "StatsHandler",
+    "QueryParams": [
+      {
+        "Name": "empty",
+        "Required": false,
+        "Description": "Filter out empty metrics.",
+        "Type": "bool",
+        "DefaultValue": "true"
+      }
+    ]
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/110"
+      "@id": "endpoints/5"
     },
-    "Path": "/admin/debug/cluster-info-package",
+    "Path": "/databases/*/metrics",
     "Method": "GET",
-    "Description": "Generates a cluster debug information package.",
-    "Handler": "ServerWideDebugInfoPackageHandler",
-    "QueryParams": []
+    "Description": "Returns performance metrics for the database including request rates and throughput.",
+    "Handler": "StatsHandler",
+    "QueryParams": [
+      {
+        "Name": "empty",
+        "Required": false,
+        "Description": "Filter out empty metrics.",
+        "Type": "bool",
+        "DefaultValue": "true"
+      },
+      {
+        "Name": "empty",
+        "Required": false,
+        "Description": "Filter out empty metrics.",
+        "Type": "bool",
+        "DefaultValue": "true"
+      }
+    ]
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/104"
+      "@id": "endpoints/6"
     },
-    "Path": "/admin/debug/cluster/history-logs",
+    "Path": "/databases/*/metrics/puts",
     "Method": "GET",
-    "Description": "Returns history-logs information.",
-    "Handler": "RachisAdminHandler",
-    "QueryParams": []
+    "Description": "Returns metrics specific to document write operations (puts).",
+    "Handler": "StatsHandler",
+    "QueryParams": [
+      {
+        "Name": "empty",
+        "Required": false,
+        "Description": "Filter out empty metrics.",
+        "Type": "bool",
+        "DefaultValue": "true"
+      },
+      {
+        "Name": "empty",
+        "Required": false,
+        "Description": "Filter out empty metrics.",
+        "Type": "bool",
+        "DefaultValue": "true"
+      }
+    ]
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/112"
+      "@id": "endpoints/7"
     },
-    "Path": "/admin/debug/cpu/stats",
+    "Path": "/databases/*/metrics/bytes",
     "Method": "GET",
-    "Description": "Returns stats information.",
-    "Handler": "ProcStatsHandler",
-    "QueryParams": []
+    "Description": "Returns metrics on data transfer in bytes for the database.",
+    "Handler": "StatsHandler",
+    "QueryParams": [
+      {
+        "Name": "empty",
+        "Required": false,
+        "Description": "Filter out empty metrics.",
+        "Type": "bool",
+        "DefaultValue": "true"
+      }
+    ]
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/111"
+      "@id": "endpoints/8"
     },
-    "Path": "/admin/debug/info-package",
+    "Path": "/databases/*/queries",
     "Method": "GET",
-    "Description": "Generates a server debug information package.",
-    "Handler": "ServerWideDebugInfoPackageHandler",
-    "QueryParams": []
+    "Description": "Executes a RQL (Raven Query Language) query and returns matching documents. Supports projections, filtering, ordering, and includes.",
+    "Handler": "QueriesHandler",
+    "QueryParams": [
+      {
+        "Name": "query",
+        "Required": true,
+        "Description": "The RQL query string to execute.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of results to skip for pagination.",
+        "Type": "int",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of results to return.",
+        "Type": "int",
+        "DefaultValue": null
+      },
+      {
+        "Name": "waitForNonStaleResults",
+        "Required": false,
+        "Description": "Wait for non-stale results before returning.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      },
+      {
+        "Name": "waitForNonStaleResultsTimeout",
+        "Required": false,
+        "Description": "Maximum time to wait for non-stale results.",
+        "Type": "TimeSpan",
+        "DefaultValue": null
+      }
+    ]
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/150"
+      "@id": "endpoints/9"
     },
-    "Path": "/admin/debug/memory/encryption-buffer-pool",
+    "Path": "/databases/*/analyzers",
     "Method": "GET",
-    "Description": "Returns statistics for the encryption buffer pool.",
-    "Handler": "MemoryDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/144"
-    },
-    "Path": "/admin/debug/memory/gc",
-    "Method": "GET",
-    "Description": "Returns garbage collection memory information and statistics.",
-    "Handler": "MemoryDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/145"
-    },
-    "Path": "/admin/debug/memory/low-mem-log",
-    "Method": "GET",
-    "Description": "Returns low memory event log entries.",
-    "Handler": "MemoryDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/148"
-    },
-    "Path": "/admin/debug/memory/smaps",
-    "Method": "GET",
-    "Description": "Returns detailed memory mapping information (smaps) for the server process.",
-    "Handler": "MemoryDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/149"
-    },
-    "Path": "/admin/debug/memory/stats",
-    "Method": "GET",
-    "Description": "Returns detailed memory statistics including thread and mapping information.",
-    "Handler": "MemoryDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/117"
-    },
-    "Path": "/admin/debug/node/clear-http-clients-pool",
-    "Method": "GET",
-    "Description": "Returns clear-http-clients-pool information.",
-    "Handler": "NodeDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/119"
-    },
-    "Path": "/admin/debug/node/engine-logs",
-    "Method": "GET",
-    "Description": "Returns storage engine log entries.",
-    "Handler": "NodeDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/121"
-    },
-    "Path": "/admin/debug/node/ping",
-    "Method": "GET",
-    "Description": "Pings the node for connectivity testing.",
-    "Handler": "NodeDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/118"
-    },
-    "Path": "/admin/debug/node/remote-connections",
-    "Method": "GET",
-    "Description": "Returns remote connection information.",
-    "Handler": "NodeDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/120"
-    },
-    "Path": "/admin/debug/node/state-change-history",
-    "Method": "GET",
-    "Description": "Returns state-change-history information.",
-    "Handler": "NodeDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/147"
-    },
-    "Path": "/admin/debug/proc/meminfo",
-    "Method": "GET",
-    "Description": "Returns Linux memory information from /proc/meminfo.",
-    "Handler": "MemoryDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/113"
-    },
-    "Path": "/admin/debug/proc/stats",
-    "Method": "GET",
-    "Description": "Returns stats information.",
-    "Handler": "ProcStatsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/146"
-    },
-    "Path": "/admin/debug/proc/status",
-    "Method": "GET",
-    "Description": "Returns Linux process status information from /proc/self/status.",
-    "Handler": "MemoryDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/109"
-    },
-    "Path": "/admin/debug/remote-cluster-info-package",
-    "Method": "GET",
-    "Description": "Returns remote-cluster-info-package information.",
-    "Handler": "ServerWideDebugInfoPackageHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/93"
-    },
-    "Path": "/admin/debug/script-runners",
-    "Method": "GET",
-    "Description": "Returns script runner debugging information.",
-    "Handler": "AdminScriptRunnersDebugInfoHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/116"
-    },
-    "Path": "/admin/debug/threads/runaway",
-    "Method": "GET",
-    "Description": "Returns information about runaway threads.",
-    "Handler": "ThreadsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/115"
-    },
-    "Path": "/admin/debug/threads/stack-trace",
-    "Method": "GET",
-    "Description": "Returns stack-trace information.",
-    "Handler": "ThreadsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/140"
-    },
-    "Path": "/admin/debug/txinfo",
-    "Method": "GET",
-    "Description": "Returns txinfo information.",
-    "Handler": "ServerTransactionDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/98"
-    },
-    "Path": "/admin/event-listener/configuration",
-    "Method": "GET",
-    "Description": "Returns configuration information.",
-    "Handler": "AdminLogsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/95"
-    },
-    "Path": "/admin/logs/configuration",
-    "Method": "GET",
-    "Description": "Returns logging configuration.",
-    "Handler": "AdminLogsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/97"
-    },
-    "Path": "/admin/logs/download",
-    "Method": "GET",
-    "Description": "Returns download information.",
-    "Handler": "AdminLogsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/96"
-    },
-    "Path": "/admin/logs/watch",
-    "Method": "GET",
-    "Description": "Watches log entries in real-time.",
-    "Handler": "AdminLogsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/92"
-    },
-    "Path": "/admin/memory/gc",
-    "Method": "GET",
-    "Description": "Returns gc information.",
-    "Handler": "AdminMemoryHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/75"
-    },
-    "Path": "/admin/secrets",
-    "Method": "GET",
-    "Description": "Returns secrets information.",
-    "Handler": "SecretKeyHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/76"
-    },
-    "Path": "/admin/secrets/generate",
-    "Method": "GET",
-    "Description": "Returns generate information.",
-    "Handler": "SecretKeyHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/105"
-    },
-    "Path": "/cluster/node-info",
-    "Method": "GET",
-    "Description": "Returns node-info information.",
-    "Handler": "RachisAdminHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/106"
-    },
-    "Path": "/cluster/topology",
-    "Method": "GET",
-    "Description": "Returns topology information.",
-    "Handler": "RachisAdminHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/91"
-    },
-    "Path": "/databases/*/admin/ai/agent",
-    "Method": "GET",
-    "Description": "Returns agent information.",
-    "Handler": "AiAgentHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/177"
-    },
-    "Path": "/databases/*/admin/backup-data-directory",
-    "Method": "GET",
-    "Description": "Returns backup-data-directory information.",
-    "Handler": "OngoingTasksHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/178"
-    },
-    "Path": "/databases/*/admin/backup/running",
-    "Method": "GET",
-    "Description": "Returns running information.",
-    "Handler": "OngoingTasksHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/99"
-    },
-    "Path": "/databases/*/admin/configuration/settings",
-    "Method": "GET",
-    "Description": "Returns settings information.",
-    "Handler": "AdminConfigurationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/179"
-    },
-    "Path": "/databases/*/admin/connection-strings",
-    "Method": "GET",
-    "Description": "Returns connection-strings information.",
-    "Handler": "OngoingTasksHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/143"
-    },
-    "Path": "/databases/*/admin/debug/cluster/txinfo",
-    "Method": "GET",
-    "Description": "Returns txinfo information.",
-    "Handler": "TransactionDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/176"
-    },
-    "Path": "/databases/*/admin/debug/periodic-backup/timers",
-    "Method": "GET",
-    "Description": "Returns timers information.",
-    "Handler": "OngoingTasksHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/142"
-    },
-    "Path": "/databases/*/admin/debug/txinfo",
-    "Method": "GET",
-    "Description": "Returns txinfo information.",
-    "Handler": "TransactionDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/185"
-    },
-    "Path": "/databases/*/admin/integrations/postgresql/server/status",
-    "Method": "GET",
-    "Description": "Returns status information.",
-    "Handler": "PostgreSqlIntegrationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/186"
-    },
-    "Path": "/databases/*/admin/integrations/postgresql/users",
-    "Method": "GET",
-    "Description": "Returns users information.",
-    "Handler": "PostgreSqlIntegrationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/175"
-    },
-    "Path": "/databases/*/admin/periodic-backup/config",
-    "Method": "GET",
-    "Description": "Returns config information.",
-    "Handler": "OngoingTasksHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/100"
-    },
-    "Path": "/databases/*/admin/record",
-    "Method": "GET",
-    "Description": "Returns record information.",
-    "Handler": "AdminConfigurationHandler",
+    "Description": "Returns a list of custom analyzers defined in the database.",
+    "Handler": "AnalyzersHandler",
     "QueryParams": []
   },
   {
@@ -530,34 +194,155 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/94"
+      "@id": "endpoints/11"
     },
-    "Path": "/databases/*/admin/tombstones/state",
+    "Path": "/databases/*/collections/stats",
     "Method": "GET",
-    "Description": "Returns state information.",
-    "Handler": "AdminTombstoneHandler",
+    "Description": "Returns statistics for all collections in the database including document counts, size estimates, and last document etag per collection. Lightweight alternative to detailed stats.",
+    "Handler": "CollectionsHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/9"
+      "@id": "endpoints/12"
     },
-    "Path": "/databases/*/analyzers",
+    "Path": "/databases/*/collections/stats/detailed",
     "Method": "GET",
-    "Description": "Returns a list of custom analyzers defined in the database.",
-    "Handler": "AnalyzersHandler",
+    "Description": "Returns detailed statistics for all collections.",
+    "Handler": "CollectionsHandler",
+    "QueryParams": [
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The collection name to retrieve documents from.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of documents to skip for pagination.",
+        "Type": "int",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of documents to return.",
+        "Type": "int",
+        "DefaultValue": null
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/13"
+    },
+    "Path": "/databases/*/collections/docs",
+    "Method": "GET",
+    "Description": "Returns documents from a specified collection. Optimized for retrieving all documents of a specific type/collection.",
+    "Handler": "CollectionsHandler",
+    "QueryParams": [
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The collection name to retrieve documents from.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of documents to skip for pagination.",
+        "Type": "int",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of documents to return.",
+        "Type": "int",
+        "DefaultValue": null
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/14"
+    },
+    "Path": "/databases/*/collections/last-change-vector",
+    "Method": "GET",
+    "Description": "Returns the last change vector for a collection.",
+    "Handler": "CollectionsHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/29"
+      "@id": "endpoints/15"
     },
-    "Path": "/databases/*/attachments",
+    "Path": "/databases/*/revisions/collections/stats",
     "Method": "GET",
-    "Description": "Returns attachment metadata or content.",
-    "Handler": "AttachmentHandler",
+    "Description": "Returns statistics for document revisions grouped by collection.",
+    "Handler": "CollectionsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/16"
+    },
+    "Path": "/databases/*/configuration/studio",
+    "Method": "GET",
+    "Description": "Returns Studio configuration settings.",
+    "Handler": "ConfigurationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/17"
+    },
+    "Path": "/databases/*/configuration/client",
+    "Method": "GET",
+    "Description": "Returns client configuration for the database.",
+    "Handler": "ConfigurationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/18"
+    },
+    "Path": "/databases/*/data-archival/config",
+    "Method": "GET",
+    "Description": "Returns data archival configuration.",
+    "Handler": "DataArchivalHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/19"
+    },
+    "Path": "/databases/*/debug/perf-metrics",
+    "Method": "GET",
+    "Description": "Returns perf-metrics information.",
+    "Handler": "PerformanceMetricsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/20"
+    },
+    "Path": "/databases/*/replication/lastEtag",
+    "Method": "GET",
+    "Description": "Returns lastEtag information.",
+    "Handler": "LegacyReplicationHandler",
     "QueryParams": []
   },
   {
@@ -585,115 +370,182 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/173"
+      "@id": "endpoints/23"
     },
-    "Path": "/databases/*/cmpxchg",
+    "Path": "/databases/*/sorters",
     "Method": "GET",
-    "Description": "Returns compare-exchange values.",
-    "Handler": "CompareExchangeHandler",
+    "Description": "Returns a list of custom sorters defined in the database.",
+    "Handler": "SortersHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/13"
+      "@id": "endpoints/24"
     },
-    "Path": "/databases/*/collections/docs",
+    "Path": "/databases/*/subscriptions/state",
     "Method": "GET",
-    "Description": "Returns documents from a specified collection. Optimized for retrieving all documents of a specific type/collection.",
-    "Handler": "CollectionsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/14"
-    },
-    "Path": "/databases/*/collections/last-change-vector",
-    "Method": "GET",
-    "Description": "Returns the last change vector for a collection.",
-    "Handler": "CollectionsHandler",
+    "Description": "Returns the state of a specific subscription.",
+    "Handler": "SubscriptionsHandler",
     "QueryParams": [
       {
-        "Name": "start",
-        "Required": false,
-        "Description": "Number of documents to skip for pagination.",
-        "Type": "int",
-        "DefaultValue": "0"
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the subscription to get state for.",
+        "Type": "string",
+        "DefaultValue": null
       },
       {
-        "Name": "pageSize",
-        "Required": false,
-        "Description": "Maximum number of documents to return.",
-        "Type": "int"
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the subscription.",
+        "Type": "string",
+        "DefaultValue": null
       }
     ]
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/11"
+      "@id": "endpoints/25"
     },
-    "Path": "/databases/*/collections/stats",
+    "Path": "/databases/*/debug/subscriptions/resend",
     "Method": "GET",
-    "Description": "Returns statistics for all collections in the database including document counts, size estimates, and last document etag per collection. Lightweight alternative to detailed stats.",
-    "Handler": "CollectionsHandler",
+    "Description": "Returns debugging information for subscription resend operations.",
+    "Handler": "SubscriptionsHandler",
+    "QueryParams": [
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the subscription.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the subscription.",
+        "Type": "string",
+        "DefaultValue": null
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/26"
+    },
+    "Path": "/databases/*/subscriptions/connection-details",
+    "Method": "GET",
+    "Description": "Returns connection details for a subscription.",
+    "Handler": "SubscriptionsHandler",
+    "QueryParams": [
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the subscription.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "id",
+        "Required": false,
+        "Description": "The specific subscription ID to retrieve.",
+        "Type": "long",
+        "DefaultValue": null
+      },
+      {
+        "Name": "name",
+        "Required": false,
+        "Description": "The specific subscription name to retrieve.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "history",
+        "Required": false,
+        "Description": "Include subscription history in the response.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/27"
+    },
+    "Path": "/databases/*/subscriptions",
+    "Method": "GET",
+    "Description": "Returns a list of all subscriptions in the database.",
+    "Handler": "SubscriptionsHandler",
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": false,
+        "Description": "The specific subscription ID to retrieve.",
+        "Type": "long",
+        "DefaultValue": null
+      },
+      {
+        "Name": "name",
+        "Required": false,
+        "Description": "The specific subscription name to retrieve.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "history",
+        "Required": false,
+        "Description": "Include subscription history in the response.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      },
+      {
+        "Name": "running",
+        "Required": false,
+        "Description": "Filter to return only running subscriptions.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/28"
+    },
+    "Path": "/databases/*/subscriptions/performance/live",
+    "Method": "GET",
+    "Description": "Returns live performance metrics for subscriptions.",
+    "Handler": "SubscriptionsHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/12"
+      "@id": "endpoints/29"
     },
-    "Path": "/databases/*/collections/stats/detailed",
+    "Path": "/databases/*/attachments",
     "Method": "GET",
-    "Description": "Returns detailed statistics for all collections.",
-    "Handler": "CollectionsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/17"
-    },
-    "Path": "/databases/*/configuration/client",
-    "Method": "GET",
-    "Description": "Returns client configuration for the database.",
-    "Handler": "ConfigurationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/16"
-    },
-    "Path": "/databases/*/configuration/studio",
-    "Method": "GET",
-    "Description": "Returns Studio configuration settings.",
-    "Handler": "ConfigurationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/79"
-    },
-    "Path": "/databases/*/counters",
-    "Method": "GET",
-    "Description": "Returns counter values for specified documents.",
-    "Handler": "CountersHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/18"
-    },
-    "Path": "/databases/*/data-archival/config",
-    "Method": "GET",
-    "Description": "Returns data archival configuration.",
-    "Handler": "DataArchivalHandler",
-    "QueryParams": []
+    "Description": "Returns attachment metadata or content.",
+    "Handler": "AttachmentHandler",
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": true,
+        "Description": "The document ID that has the attachment.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the attachment.",
+        "Type": "string",
+        "DefaultValue": null
+      }
+    ]
   },
   {
     "@metadata": {
@@ -731,67 +583,670 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/114"
+      "@id": "endpoints/33"
     },
-    "Path": "/databases/*/debug/documents/export-all-ids",
+    "Path": "/databases/*/documents-compression/config",
     "Method": "GET",
-    "Description": "Returns export-all-ids information.",
-    "Handler": "ExportAllDocIdsHandler",
+    "Description": "Returns config information.",
+    "Handler": "DocumentsCompressionHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/128"
+      "@id": "endpoints/34"
     },
-    "Path": "/databases/*/debug/documents/get-revisions",
+    "Path": "/databases/*/expiration/config",
     "Method": "GET",
-    "Description": "Returns get-revisions information.",
+    "Description": "Returns document expiration configuration.",
+    "Handler": "ExpirationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/35"
+    },
+    "Path": "/databases/*/replication/tombstones",
+    "Method": "GET",
+    "Description": "Returns replication tombstone information.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": [
+      {
+        "Name": "docId",
+        "Required": false,
+        "Description": "Specific document ID to get conflicts for. If not provided, returns a preview of all conflicts.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of conflicts to skip for pagination.",
+        "Type": "long",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of conflicts to return.",
+        "Type": "int",
+        "DefaultValue": "int.MaxValue"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/36"
+    },
+    "Path": "/databases/*/replication/conflicts",
+    "Method": "GET",
+    "Description": "Returns replication conflicts.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": [
+      {
+        "Name": "docId",
+        "Required": false,
+        "Description": "Specific document ID to get conflicts for. If not provided, returns a preview of all conflicts.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of conflicts to skip for pagination.",
+        "Type": "long",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of conflicts to return.",
+        "Type": "int",
+        "DefaultValue": "int.MaxValue"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/37"
+    },
+    "Path": "/databases/*/replication/performance",
+    "Method": "GET",
+    "Description": "Returns replication performance metrics.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/38"
+    },
+    "Path": "/databases/*/replication/performance/live",
+    "Method": "GET",
+    "Description": "Returns live replication performance metrics.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/39"
+    },
+    "Path": "/databases/*/replication/pulses/live",
+    "Method": "GET",
+    "Description": "Returns live replication pulse data.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/40"
+    },
+    "Path": "/databases/*/replication/active-connections",
+    "Method": "GET",
+    "Description": "Returns active replication connections.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/41"
+    },
+    "Path": "/databases/*/replication/debug/outgoing-failures",
+    "Method": "GET",
+    "Description": "Returns outgoing-failures information.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/42"
+    },
+    "Path": "/databases/*/replication/debug/incoming-last-activity-time",
+    "Method": "GET",
+    "Description": "Returns incoming-last-activity-time information.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/43"
+    },
+    "Path": "/databases/*/replication/debug/incoming-rejection-info",
+    "Method": "GET",
+    "Description": "Returns incoming-rejection-info information.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/44"
+    },
+    "Path": "/databases/*/replication/debug/outgoing-reconnect-queue",
+    "Method": "GET",
+    "Description": "Returns outgoing-reconnect-queue information.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/45"
+    },
+    "Path": "/databases/*/replication/conflicts/solver",
+    "Method": "GET",
+    "Description": "Returns solver information.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/46"
+    },
+    "Path": "/databases/*/debug/replication/all-items",
+    "Method": "GET",
+    "Description": "Returns all-items information.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/47"
+    },
+    "Path": "/databases/*/replication/progress",
+    "Method": "GET",
+    "Description": "Returns progress information.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/48"
+    },
+    "Path": "/databases/*/replication/internal/outgoing/progress",
+    "Method": "GET",
+    "Description": "Returns progress information.",
+    "Handler": "ReplicationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/49"
+    },
+    "Path": "/databases/*/indexes/source",
+    "Method": "GET",
+    "Description": "Returns the source code/definition of specified indexes.",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/50"
+    },
+    "Path": "/databases/*/indexes/history",
+    "Method": "GET",
+    "Description": "Returns the modification history of indexes in the database.",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/51"
+    },
+    "Path": "/databases/*/indexes/debug",
+    "Method": "GET",
+    "Description": "Returns debugging information for indexes.",
+    "Handler": "IndexHandler",
+    "QueryParams": [
+      {
+        "Name": "namesOnly",
+        "Required": false,
+        "Description": "When true, returns only index names instead of full definitions.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/52"
+    },
+    "Path": "/databases/*/indexes",
+    "Method": "GET",
+    "Description": "Returns a list of all indexes in the database with their definitions, types, and status.",
+    "Handler": "IndexHandler",
+    "QueryParams": [
+      {
+        "Name": "namesOnly",
+        "Required": false,
+        "Description": "When true, returns only index names instead of full definitions.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/53"
+    },
+    "Path": "/databases/*/indexes/stats",
+    "Method": "GET",
+    "Description": "Returns comprehensive statistics for all indexes including entry counts, map/reduce performance metrics, indexing errors, memory usage, and current state.",
+    "Handler": "IndexHandler",
+    "QueryParams": [
+      {
+        "Name": "name",
+        "Required": false,
+        "Description": "Specific index name(s) to get statistics for. Can be specified multiple times.",
+        "Type": "string[]",
+        "DefaultValue": null
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/54"
+    },
+    "Path": "/databases/*/indexes/staleness",
+    "Method": "GET",
+    "Description": "Checks if indexes are stale and returns staleness information.",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/55"
+    },
+    "Path": "/databases/*/indexes/progress",
+    "Method": "GET",
+    "Description": "Returns indexing progress information for ongoing index operations.",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/56"
+    },
+    "Path": "/databases/*/indexes/c-sharp-index-definition",
+    "Method": "GET",
+    "Description": "Generates C# code for index definitions.",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/57"
+    },
+    "Path": "/databases/*/indexes/status",
+    "Method": "GET",
+    "Description": "Returns the status of all indexes (enabled, disabled, paused, etc.).",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/58"
+    },
+    "Path": "/databases/*/indexes/errors",
+    "Method": "GET",
+    "Description": "Returns errors that occurred during indexing operations.",
+    "Handler": "IndexHandler",
+    "QueryParams": [
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the index.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "field",
+        "Required": true,
+        "Description": "The index field to extract terms from.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "fromValue",
+        "Required": false,
+        "Description": "The starting term value for pagination.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of terms to return.",
+        "Type": "int",
+        "DefaultValue": "int.MaxValue"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/59"
+    },
+    "Path": "/databases/*/indexes/terms",
+    "Method": "GET",
+    "Description": "Returns all terms in a specified index field. Useful for introspection, debugging, and implementing auto-complete functionality.",
+    "Handler": "IndexHandler",
+    "QueryParams": [
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the index.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "field",
+        "Required": true,
+        "Description": "The index field to extract terms from.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "fromValue",
+        "Required": false,
+        "Description": "The starting term value for pagination.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of terms to return.",
+        "Type": "int",
+        "DefaultValue": "int.MaxValue"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/60"
+    },
+    "Path": "/databases/*/indexes/total-time",
+    "Method": "GET",
+    "Description": "Returns total indexing time statistics.",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/61"
+    },
+    "Path": "/databases/*/indexes/performance",
+    "Method": "GET",
+    "Description": "Returns detailed performance metrics for index operations.",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/62"
+    },
+    "Path": "/databases/*/indexes/performance/live",
+    "Method": "GET",
+    "Description": "Returns live performance metrics for index operations.",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/63"
+    },
+    "Path": "/databases/*/indexes/suggest-index-merge",
+    "Method": "GET",
+    "Description": "Suggests indexes that could be merged to improve performance.",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/64"
+    },
+    "Path": "/databases/*/indexes/debug/metadata",
+    "Method": "GET",
+    "Description": "Returns debug metadata information for indexes.",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/65"
+    },
+    "Path": "/databases/*/indexes/auto/convert",
+    "Method": "GET",
+    "Description": "Returns information about auto-index to static index conversion.",
+    "Handler": "IndexHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/66"
+    },
+    "Path": "/databases/*/revisions/config",
+    "Method": "GET",
+    "Description": "Returns document revision configuration.",
+    "Handler": "RevisionsHandler",
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": true,
+        "Description": "The document ID to get revision count for.",
+        "Type": "string",
+        "DefaultValue": null
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/67"
+    },
+    "Path": "/databases/*/revisions/conflicts/config",
+    "Method": "GET",
+    "Description": "Returns conflict resolution configuration for revisions.",
+    "Handler": "RevisionsHandler",
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": true,
+        "Description": "The document ID to get revision count for.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "id",
+        "Required": false,
+        "Description": "The document ID to get revisions for. Mutually exclusive with changeVector parameter.",
+        "Type": "string",
+        "DefaultValue": null
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/68"
+    },
+    "Path": "/databases/*/revisions/count",
+    "Method": "GET",
+    "Description": "Returns the count of revisions for a document.",
+    "Handler": "RevisionsHandler",
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": true,
+        "Description": "The document ID to get revision count for.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "id",
+        "Required": false,
+        "Description": "The document ID to get revisions for. Mutually exclusive with changeVector parameter.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "changeVector",
+        "Required": false,
+        "Description": "Specific change vector(s) to retrieve revisions for. Can be specified multiple times. Mutually exclusive with id parameter.",
+        "Type": "string[]",
+        "DefaultValue": null
+      },
+      {
+        "Name": "before",
+        "Required": false,
+        "Description": "Return revisions created before this date. Only used with id parameter.",
+        "Type": "DateTime",
+        "DefaultValue": null
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/69"
+    },
+    "Path": "/databases/*/revisions",
+    "Method": "GET",
+    "Description": "Returns document revisions.",
+    "Handler": "RevisionsHandler",
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": false,
+        "Description": "The document ID to get revisions for. Mutually exclusive with changeVector parameter.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "changeVector",
+        "Required": false,
+        "Description": "Specific change vector(s) to retrieve revisions for. Can be specified multiple times. Mutually exclusive with id parameter.",
+        "Type": "string[]",
+        "DefaultValue": null
+      },
+      {
+        "Name": "before",
+        "Required": false,
+        "Description": "Return revisions created before this date. Only used with id parameter.",
+        "Type": "DateTime",
+        "DefaultValue": null
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of revisions to skip for pagination.",
+        "Type": "int",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of revisions to return.",
+        "Type": "int",
+        "DefaultValue": "25"
+      },
+      {
+        "Name": "metadataOnly",
+        "Required": false,
+        "Description": "When true, returns only revision metadata without full content.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/70"
+    },
+    "Path": "/databases/*/revisions/size",
+    "Method": "GET",
+    "Description": "Returns the size of document revisions.",
+    "Handler": "RevisionsHandler",
+    "QueryParams": [
+      {
+        "Name": "changeVector",
+        "Required": true,
+        "Description": "The change vector of the revision to get size for.",
+        "Type": "string",
+        "DefaultValue": null
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/71"
+    },
+    "Path": "/databases/*/revisions/resolved",
+    "Method": "GET",
+    "Description": "Returns resolved information.",
     "Handler": "RevisionsHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/123"
+      "@id": "endpoints/72"
     },
-    "Path": "/databases/*/debug/documents/huge",
+    "Path": "/databases/*/revisions/bin",
     "Method": "GET",
-    "Description": "Returns huge information.",
-    "Handler": "DocumentDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/124"
-    },
-    "Path": "/databases/*/debug/documents/scan-corrupted-ids",
-    "Method": "GET",
-    "Description": "Returns scan-corrupted-ids information.",
-    "Handler": "DocumentDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/139"
-    },
-    "Path": "/databases/*/debug/identities",
-    "Method": "GET",
-    "Description": "Returns debugging information for identity values.",
-    "Handler": "IdentityDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/141"
-    },
-    "Path": "/databases/*/debug/info-package",
-    "Method": "GET",
-    "Description": "Generates a database debug information package.",
-    "Handler": "DatabaseDebugInfoPackageHandler",
+    "Description": "Returns documents in the revisions bin.",
+    "Handler": "RevisionsHandler",
     "QueryParams": []
   },
   {
@@ -819,183 +1274,150 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/19"
+      "@id": "endpoints/75"
     },
-    "Path": "/databases/*/debug/perf-metrics",
+    "Path": "/admin/secrets",
     "Method": "GET",
-    "Description": "Returns perf-metrics information.",
-    "Handler": "PerformanceMetricsHandler",
+    "Description": "Returns secrets information.",
+    "Handler": "SecretKeyHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/126"
+      "@id": "endpoints/76"
     },
-    "Path": "/databases/*/debug/queries/cache/list",
+    "Path": "/admin/secrets/generate",
     "Method": "GET",
-    "Description": "Returns list information.",
-    "Handler": "QueriesDebugHandler",
+    "Description": "Returns generate information.",
+    "Handler": "SecretKeyHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/125"
+      "@id": "endpoints/77"
     },
-    "Path": "/databases/*/debug/queries/running",
+    "Path": "/secrets/generate",
     "Method": "GET",
-    "Description": "Returns currently running queries.",
-    "Handler": "QueriesDebugHandler",
+    "Description": "Returns generate information.",
+    "Handler": "SecretKeyHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/46"
+      "@id": "endpoints/78"
     },
-    "Path": "/databases/*/debug/replication/all-items",
+    "Path": "/databases/*/hilo/next",
     "Method": "GET",
-    "Description": "Returns all-items information.",
-    "Handler": "ReplicationHandler",
+    "Description": "Returns the next HiLo value for ID generation.",
+    "Handler": "HiLoHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/122"
+      "@id": "endpoints/79"
     },
-    "Path": "/databases/*/debug/script-runners",
+    "Path": "/databases/*/counters",
     "Method": "GET",
-    "Description": "Returns script-runners information.",
-    "Handler": "ScriptRunnersDebugInfoHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/134"
-    },
-    "Path": "/databases/*/debug/storage/all-environments/report",
-    "Method": "GET",
-    "Description": "Returns debug information for all storage environments.",
-    "Handler": "StorageHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/131"
-    },
-    "Path": "/databases/*/debug/storage/btree-structure",
-    "Method": "GET",
-    "Description": "Returns btree-structure information.",
-    "Handler": "StorageHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/136"
-    },
-    "Path": "/databases/*/debug/storage/compression-dictionaries",
-    "Method": "GET",
-    "Description": "Returns compression-dictionaries information.",
-    "Handler": "StorageHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/129"
-    },
-    "Path": "/databases/*/debug/storage/environment/debug-only/pages",
-    "Method": "GET",
-    "Description": "Returns pages information.",
-    "Handler": "StorageHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/138"
-    },
-    "Path": "/databases/*/debug/storage/environment/free-space-snapshot",
-    "Method": "GET",
-    "Description": "Returns free-space-snapshot information.",
-    "Handler": "StorageHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/135"
-    },
-    "Path": "/databases/*/debug/storage/environment/report",
-    "Method": "GET",
-    "Description": "Returns storage environment debug information.",
-    "Handler": "StorageHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/137"
-    },
-    "Path": "/databases/*/debug/storage/environment/scratch-buffer-info",
-    "Method": "GET",
-    "Description": "Returns scratch-buffer-info information.",
-    "Handler": "StorageHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/132"
-    },
-    "Path": "/databases/*/debug/storage/fst-structure",
-    "Method": "GET",
-    "Description": "Returns fst-structure information.",
-    "Handler": "StorageHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/133"
-    },
-    "Path": "/databases/*/debug/storage/report",
-    "Method": "GET",
-    "Description": "Returns report information.",
-    "Handler": "StorageHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/130"
-    },
-    "Path": "/databases/*/debug/storage/trees",
-    "Method": "GET",
-    "Description": "Returns trees information.",
-    "Handler": "StorageHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/25"
-    },
-    "Path": "/databases/*/debug/subscriptions/resend",
-    "Method": "GET",
-    "Description": "Returns debugging information for subscription resend operations.",
-    "Handler": "SubscriptionsHandler",
+    "Description": "Returns counter values for specified documents.",
+    "Handler": "CountersHandler",
     "QueryParams": [
       {
-        "Name": "name",
+        "Name": "docId",
         "Required": true,
-        "Description": "The name of the subscription to get state for.",
-        "Type": "string"
+        "Description": "The document ID containing the counters.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "counter",
+        "Required": false,
+        "Description": "Specific counter name(s) to retrieve. Can be specified multiple times. If not provided, returns all counters for the document.",
+        "Type": "string[]",
+        "DefaultValue": null
+      },
+      {
+        "Name": "full",
+        "Required": false,
+        "Description": "Return full counter details including change vectors.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/80"
+    },
+    "Path": "/databases/*/tcp",
+    "Method": "GET",
+    "Description": "Returns TCP connection information.",
+    "Handler": "TcpManagementHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/81"
+    },
+    "Path": "/databases/*/revisions/bin-cleaner/config",
+    "Method": "GET",
+    "Description": "Returns config information.",
+    "Handler": "RevisionsBinCleanerHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/82"
+    },
+    "Path": "/databases/*/refresh/config",
+    "Method": "GET",
+    "Description": "Returns refresh configuration.",
+    "Handler": "RefreshHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/83"
+    },
+    "Path": "/databases/*/docs/size",
+    "Method": "GET",
+    "Description": "Returns the size of documents.",
+    "Handler": "DocumentHandler",
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": false,
+        "Description": "Specific document ID(s) to retrieve. Can be specified multiple times.",
+        "Type": "string[]",
+        "DefaultValue": null
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of documents to skip for pagination.",
+        "Type": "int",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of documents to return.",
+        "Type": "int",
+        "DefaultValue": null
+      },
+      {
+        "Name": "metadataOnly",
+        "Required": false,
+        "Description": "When true, returns only document metadata without content.",
+        "Type": "bool",
+        "DefaultValue": "false"
       }
     ]
   },
@@ -1008,7 +1430,36 @@
     "Method": "GET",
     "Description": "Returns documents from the database. Supports ETags for conditional requests via If-None-Match header.",
     "Handler": "DocumentHandler",
-    "QueryParams": []
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": false,
+        "Description": "Specific document ID(s) to retrieve. Can be specified multiple times.",
+        "Type": "string[]",
+        "DefaultValue": null
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of documents to skip for pagination.",
+        "Type": "int",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of documents to return.",
+        "Type": "int",
+        "DefaultValue": null
+      },
+      {
+        "Name": "metadataOnly",
+        "Required": false,
+        "Description": "When true, returns only document metadata without content.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
   },
   {
     "@metadata": {
@@ -1024,23 +1475,918 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/83"
+      "@id": "endpoints/86"
     },
-    "Path": "/databases/*/docs/size",
+    "Path": "/databases/*/timeseries/stats",
     "Method": "GET",
-    "Description": "Returns the size of documents.",
-    "Handler": "DocumentHandler",
+    "Description": "Returns statistics for time series data.",
+    "Handler": "TimeSeriesHandler",
+    "QueryParams": [
+      {
+        "Name": "docId",
+        "Required": false,
+        "Description": "The document ID to get time series statistics for. If not provided, returns stats for all time series.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "docId",
+        "Required": true,
+        "Description": "The document ID containing the time series.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the time series.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "from",
+        "Required": false,
+        "Description": "Start date/time for the range query.",
+        "Type": "DateTime",
+        "DefaultValue": null
+      },
+      {
+        "Name": "to",
+        "Required": false,
+        "Description": "End date/time for the range query.",
+        "Type": "DateTime",
+        "DefaultValue": null
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/87"
+    },
+    "Path": "/databases/*/timeseries/ranges",
+    "Method": "GET",
+    "Description": "Returns time series data within specified ranges.",
+    "Handler": "TimeSeriesHandler",
+    "QueryParams": [
+      {
+        "Name": "docId",
+        "Required": true,
+        "Description": "The document ID containing the time series.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the time series.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "from",
+        "Required": false,
+        "Description": "Start date/time for the range query.",
+        "Type": "DateTime",
+        "DefaultValue": null
+      },
+      {
+        "Name": "to",
+        "Required": false,
+        "Description": "End date/time for the range query.",
+        "Type": "DateTime",
+        "DefaultValue": null
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of entries to skip for pagination.",
+        "Type": "int",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of entries to return.",
+        "Type": "int",
+        "DefaultValue": "25"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/88"
+    },
+    "Path": "/databases/*/timeseries",
+    "Method": "GET",
+    "Description": "Returns time series data for a document.",
+    "Handler": "TimeSeriesHandler",
+    "QueryParams": [
+      {
+        "Name": "docId",
+        "Required": true,
+        "Description": "The document ID containing the time series.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the time series.",
+        "Type": "string",
+        "DefaultValue": null
+      },
+      {
+        "Name": "from",
+        "Required": false,
+        "Description": "Start date/time for the range.",
+        "Type": "DateTime",
+        "DefaultValue": null
+      },
+      {
+        "Name": "to",
+        "Required": false,
+        "Description": "End date/time for the range.",
+        "Type": "DateTime",
+        "DefaultValue": null
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of entries to skip for pagination.",
+        "Type": "int",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of entries to return.",
+        "Type": "int",
+        "DefaultValue": "25"
+      },
+      {
+        "Name": "includeDocument",
+        "Required": false,
+        "Description": "Include the document data in the response.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      },
+      {
+        "Name": "includeTags",
+        "Required": false,
+        "Description": "Include tag information in the response.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/89"
+    },
+    "Path": "/databases/*/timeseries/config",
+    "Method": "GET",
+    "Description": "Returns time series configuration.",
+    "Handler": "TimeSeriesHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/33"
+      "@id": "endpoints/90"
     },
-    "Path": "/databases/*/documents-compression/config",
+    "Path": "/databases/*/timeseries/debug/segments-summary",
     "Method": "GET",
-    "Description": "Returns config information.",
-    "Handler": "DocumentsCompressionHandler",
+    "Description": "Returns debug summary of time series segments.",
+    "Handler": "TimeSeriesHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/91"
+    },
+    "Path": "/admin/memory/gc",
+    "Method": "GET",
+    "Description": "Returns gc information.",
+    "Handler": "AdminMemoryHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/92"
+    },
+    "Path": "/admin/debug/script-runners",
+    "Method": "GET",
+    "Description": "Returns script runner debugging information.",
+    "Handler": "AdminScriptRunnersDebugInfoHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/93"
+    },
+    "Path": "/databases/*/admin/tombstones/state",
+    "Method": "GET",
+    "Description": "Returns state information.",
+    "Handler": "AdminTombstoneHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/94"
+    },
+    "Path": "/admin/logs/configuration",
+    "Method": "GET",
+    "Description": "Returns logging configuration.",
+    "Handler": "AdminLogsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/95"
+    },
+    "Path": "/admin/logs/watch",
+    "Method": "GET",
+    "Description": "Watches log entries in real-time.",
+    "Handler": "AdminLogsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/96"
+    },
+    "Path": "/admin/logs/download",
+    "Method": "GET",
+    "Description": "Returns download information.",
+    "Handler": "AdminLogsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/97"
+    },
+    "Path": "/admin/event-listener/configuration",
+    "Method": "GET",
+    "Description": "Returns configuration information.",
+    "Handler": "AdminLogsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/98"
+    },
+    "Path": "/databases/*/admin/configuration/settings",
+    "Method": "GET",
+    "Description": "Returns settings information.",
+    "Handler": "AdminConfigurationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/99"
+    },
+    "Path": "/databases/*/admin/record",
+    "Method": "GET",
+    "Description": "Returns record information.",
+    "Handler": "AdminConfigurationHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/100"
+    },
+    "Path": "/admin/cluster/observer/decisions",
+    "Method": "GET",
+    "Description": "Returns decisions information.",
+    "Handler": "RachisAdminHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/101"
+    },
+    "Path": "/admin/cluster/log",
+    "Method": "GET",
+    "Description": "Returns log information.",
+    "Handler": "RachisAdminHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/102"
+    },
+    "Path": "/admin/cluster/log/entry",
+    "Method": "GET",
+    "Description": "Returns entry information.",
+    "Handler": "RachisAdminHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/103"
+    },
+    "Path": "/admin/debug/cluster/history-logs",
+    "Method": "GET",
+    "Description": "Returns history-logs information.",
+    "Handler": "RachisAdminHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/104"
+    },
+    "Path": "/cluster/node-info",
+    "Method": "GET",
+    "Description": "Returns node-info information.",
+    "Handler": "RachisAdminHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/105"
+    },
+    "Path": "/cluster/topology",
+    "Method": "GET",
+    "Description": "Returns topology information.",
+    "Handler": "RachisAdminHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/106"
+    },
+    "Path": "/admin/cluster/maintenance-stats",
+    "Method": "GET",
+    "Description": "Returns maintenance-stats information.",
+    "Handler": "RachisAdminHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/107"
+    },
+    "Path": "/debug/server-id",
+    "Method": "GET",
+    "Description": "Returns server-id information.",
+    "Handler": "ServerInfoHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/108"
+    },
+    "Path": "/admin/debug/remote-cluster-info-package",
+    "Method": "GET",
+    "Description": "Returns remote-cluster-info-package information.",
+    "Handler": "ServerWideDebugInfoPackageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/109"
+    },
+    "Path": "/admin/debug/cluster-info-package",
+    "Method": "GET",
+    "Description": "Generates a cluster debug information package.",
+    "Handler": "ServerWideDebugInfoPackageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/110"
+    },
+    "Path": "/admin/debug/info-package",
+    "Method": "GET",
+    "Description": "Generates a server debug information package.",
+    "Handler": "ServerWideDebugInfoPackageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/111"
+    },
+    "Path": "/admin/debug/cpu/stats",
+    "Method": "GET",
+    "Description": "Returns stats information.",
+    "Handler": "ProcStatsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/112"
+    },
+    "Path": "/admin/debug/proc/stats",
+    "Method": "GET",
+    "Description": "Returns stats information.",
+    "Handler": "ProcStatsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/113"
+    },
+    "Path": "/databases/*/debug/documents/export-all-ids",
+    "Method": "GET",
+    "Description": "Returns export-all-ids information.",
+    "Handler": "ExportAllDocIdsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/114"
+    },
+    "Path": "/admin/debug/threads/stack-trace",
+    "Method": "GET",
+    "Description": "Returns stack-trace information.",
+    "Handler": "ThreadsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/115"
+    },
+    "Path": "/admin/debug/threads/runaway",
+    "Method": "GET",
+    "Description": "Returns information about runaway threads.",
+    "Handler": "ThreadsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/116"
+    },
+    "Path": "/admin/debug/node/clear-http-clients-pool",
+    "Method": "GET",
+    "Description": "Returns clear-http-clients-pool information.",
+    "Handler": "NodeDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/117"
+    },
+    "Path": "/admin/debug/node/remote-connections",
+    "Method": "GET",
+    "Description": "Returns remote connection information.",
+    "Handler": "NodeDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/118"
+    },
+    "Path": "/admin/debug/node/engine-logs",
+    "Method": "GET",
+    "Description": "Returns storage engine log entries.",
+    "Handler": "NodeDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/119"
+    },
+    "Path": "/admin/debug/node/state-change-history",
+    "Method": "GET",
+    "Description": "Returns state-change-history information.",
+    "Handler": "NodeDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/120"
+    },
+    "Path": "/admin/debug/node/ping",
+    "Method": "GET",
+    "Description": "Pings the node for connectivity testing.",
+    "Handler": "NodeDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/121"
+    },
+    "Path": "/databases/*/debug/script-runners",
+    "Method": "GET",
+    "Description": "Returns script-runners information.",
+    "Handler": "ScriptRunnersDebugInfoHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/122"
+    },
+    "Path": "/databases/*/debug/documents/huge",
+    "Method": "GET",
+    "Description": "Returns huge information.",
+    "Handler": "DocumentDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/123"
+    },
+    "Path": "/databases/*/debug/documents/scan-corrupted-ids",
+    "Method": "GET",
+    "Description": "Returns scan-corrupted-ids information.",
+    "Handler": "DocumentDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/124"
+    },
+    "Path": "/databases/*/debug/queries/running",
+    "Method": "GET",
+    "Description": "Returns currently running queries.",
+    "Handler": "QueriesDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/125"
+    },
+    "Path": "/databases/*/debug/queries/cache/list",
+    "Method": "GET",
+    "Description": "Returns list information.",
+    "Handler": "QueriesDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/126"
+    },
+    "Path": "/debug/queries/running/live",
+    "Method": "GET",
+    "Description": "Returns live information.",
+    "Handler": "ServerWideQueriesDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/127"
+    },
+    "Path": "/databases/*/debug/documents/get-revisions",
+    "Method": "GET",
+    "Description": "Returns get-revisions information.",
+    "Handler": "RevisionsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/128"
+    },
+    "Path": "/databases/*/debug/storage/environment/debug-only/pages",
+    "Method": "GET",
+    "Description": "Returns pages information.",
+    "Handler": "StorageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/129"
+    },
+    "Path": "/databases/*/debug/storage/trees",
+    "Method": "GET",
+    "Description": "Returns trees information.",
+    "Handler": "StorageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/130"
+    },
+    "Path": "/databases/*/debug/storage/btree-structure",
+    "Method": "GET",
+    "Description": "Returns btree-structure information.",
+    "Handler": "StorageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/131"
+    },
+    "Path": "/databases/*/debug/storage/fst-structure",
+    "Method": "GET",
+    "Description": "Returns fst-structure information.",
+    "Handler": "StorageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/132"
+    },
+    "Path": "/databases/*/debug/storage/report",
+    "Method": "GET",
+    "Description": "Returns report information.",
+    "Handler": "StorageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/133"
+    },
+    "Path": "/databases/*/debug/storage/all-environments/report",
+    "Method": "GET",
+    "Description": "Returns debug information for all storage environments.",
+    "Handler": "StorageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/134"
+    },
+    "Path": "/databases/*/debug/storage/environment/report",
+    "Method": "GET",
+    "Description": "Returns storage environment debug information.",
+    "Handler": "StorageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/135"
+    },
+    "Path": "/databases/*/debug/storage/compression-dictionaries",
+    "Method": "GET",
+    "Description": "Returns compression-dictionaries information.",
+    "Handler": "StorageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/136"
+    },
+    "Path": "/databases/*/debug/storage/environment/scratch-buffer-info",
+    "Method": "GET",
+    "Description": "Returns scratch-buffer-info information.",
+    "Handler": "StorageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/137"
+    },
+    "Path": "/databases/*/debug/storage/environment/free-space-snapshot",
+    "Method": "GET",
+    "Description": "Returns free-space-snapshot information.",
+    "Handler": "StorageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/138"
+    },
+    "Path": "/databases/*/debug/identities",
+    "Method": "GET",
+    "Description": "Returns debugging information for identity values.",
+    "Handler": "IdentityDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/139"
+    },
+    "Path": "/admin/debug/txinfo",
+    "Method": "GET",
+    "Description": "Returns txinfo information.",
+    "Handler": "ServerTransactionDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/140"
+    },
+    "Path": "/databases/*/debug/info-package",
+    "Method": "GET",
+    "Description": "Generates a database debug information package.",
+    "Handler": "DatabaseDebugInfoPackageHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/141"
+    },
+    "Path": "/databases/*/admin/debug/txinfo",
+    "Method": "GET",
+    "Description": "Returns txinfo information.",
+    "Handler": "TransactionDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/142"
+    },
+    "Path": "/databases/*/admin/debug/cluster/txinfo",
+    "Method": "GET",
+    "Description": "Returns txinfo information.",
+    "Handler": "TransactionDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/143"
+    },
+    "Path": "/admin/debug/memory/gc",
+    "Method": "GET",
+    "Description": "Returns garbage collection memory information and statistics.",
+    "Handler": "MemoryDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/144"
+    },
+    "Path": "/admin/debug/memory/low-mem-log",
+    "Method": "GET",
+    "Description": "Returns low memory event log entries.",
+    "Handler": "MemoryDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/145"
+    },
+    "Path": "/admin/debug/proc/status",
+    "Method": "GET",
+    "Description": "Returns Linux process status information from /proc/self/status.",
+    "Handler": "MemoryDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/146"
+    },
+    "Path": "/admin/debug/proc/meminfo",
+    "Method": "GET",
+    "Description": "Returns Linux memory information from /proc/meminfo.",
+    "Handler": "MemoryDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/147"
+    },
+    "Path": "/admin/debug/memory/smaps",
+    "Method": "GET",
+    "Description": "Returns detailed memory mapping information (smaps) for the server process.",
+    "Handler": "MemoryDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/148"
+    },
+    "Path": "/admin/debug/memory/stats",
+    "Method": "GET",
+    "Description": "Returns detailed memory statistics including thread and mapping information.",
+    "Handler": "MemoryDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/149"
+    },
+    "Path": "/admin/debug/memory/encryption-buffer-pool",
+    "Method": "GET",
+    "Description": "Returns statistics for the encryption buffer pool.",
+    "Handler": "MemoryDebugHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/150"
+    },
+    "Path": "/databases/*/streams/docs",
+    "Method": "GET",
+    "Description": "Streams documents from the database.",
+    "Handler": "StreamingHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/151"
+    },
+    "Path": "/databases/*/streams/timeseries",
+    "Method": "GET",
+    "Description": "Streams time series data.",
+    "Handler": "StreamingHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/152"
+    },
+    "Path": "/databases/*/streams/queries",
+    "Method": "GET",
+    "Description": "Streams query results.",
+    "Handler": "StreamingHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/153"
+    },
+    "Path": "/databases/*/admin/ai/agent",
+    "Method": "GET",
+    "Description": "Returns agent information.",
+    "Handler": "AiAgentHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/154"
+    },
+    "Path": "/debug/info-package/analyzer/summary",
+    "Method": "GET",
+    "Description": "Returns summary information.",
+    "Handler": "DebugPackageAnalyzerHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/155"
+    },
+    "Path": "/debug/info-package/analyzer/summary/node",
+    "Method": "GET",
+    "Description": "Returns node information.",
+    "Handler": "DebugPackageAnalyzerHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/156"
+    },
+    "Path": "/databases/*/etl/stats",
+    "Method": "GET",
+    "Description": "Returns ETL (Extract, Transform, Load) statistics.",
+    "Handler": "EtlHandler",
     "QueryParams": []
   },
   {
@@ -1090,771 +2436,12 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/156"
-    },
-    "Path": "/databases/*/etl/stats",
-    "Method": "GET",
-    "Description": "Returns ETL (Extract, Transform, Load) statistics.",
-    "Handler": "EtlHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/34"
-    },
-    "Path": "/databases/*/expiration/config",
-    "Method": "GET",
-    "Description": "Returns document expiration configuration.",
-    "Handler": "ExpirationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/4"
-    },
-    "Path": "/databases/*/healthcheck",
-    "Method": "GET",
-    "Description": "Performs a health check on the database and returns its status.",
-    "Handler": "StatsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/78"
-    },
-    "Path": "/databases/*/hilo/next",
-    "Method": "GET",
-    "Description": "Returns the next HiLo value for ID generation.",
-    "Handler": "HiLoHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/52"
-    },
-    "Path": "/databases/*/indexes",
-    "Method": "GET",
-    "Description": "Returns a list of all indexes in the database with their definitions, types, and status.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/65"
-    },
-    "Path": "/databases/*/indexes/auto/convert",
-    "Method": "GET",
-    "Description": "Returns information about auto-index to static index conversion.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/56"
-    },
-    "Path": "/databases/*/indexes/c-sharp-index-definition",
-    "Method": "GET",
-    "Description": "Generates C# code for index definitions.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/51"
-    },
-    "Path": "/databases/*/indexes/debug",
-    "Method": "GET",
-    "Description": "Returns debugging information for indexes.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/64"
-    },
-    "Path": "/databases/*/indexes/debug/metadata",
-    "Method": "GET",
-    "Description": "Returns debug metadata information for indexes.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/58"
-    },
-    "Path": "/databases/*/indexes/errors",
-    "Method": "GET",
-    "Description": "Returns errors that occurred during indexing operations.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/50"
-    },
-    "Path": "/databases/*/indexes/history",
-    "Method": "GET",
-    "Description": "Returns the modification history of indexes in the database.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/61"
-    },
-    "Path": "/databases/*/indexes/performance",
-    "Method": "GET",
-    "Description": "Returns detailed performance metrics for index operations.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/62"
-    },
-    "Path": "/databases/*/indexes/performance/live",
-    "Method": "GET",
-    "Description": "Returns live performance metrics for index operations.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/55"
-    },
-    "Path": "/databases/*/indexes/progress",
-    "Method": "GET",
-    "Description": "Returns indexing progress information for ongoing index operations.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/49"
-    },
-    "Path": "/databases/*/indexes/source",
-    "Method": "GET",
-    "Description": "Returns the source code/definition of specified indexes.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/54"
-    },
-    "Path": "/databases/*/indexes/staleness",
-    "Method": "GET",
-    "Description": "Checks if indexes are stale and returns staleness information.",
-    "Handler": "IndexHandler",
-    "QueryParams": [
-      {
-        "Name": "name",
-        "Required": false,
-        "Description": "Specific index name(s) to get statistics for. Can be specified multiple times.",
-        "Type": "string[]"
-      }
-    ]
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/53"
-    },
-    "Path": "/databases/*/indexes/stats",
-    "Method": "GET",
-    "Description": "Returns comprehensive statistics for all indexes including entry counts, map/reduce performance metrics, indexing errors, memory usage, and current state.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/57"
-    },
-    "Path": "/databases/*/indexes/status",
-    "Method": "GET",
-    "Description": "Returns the status of all indexes (enabled, disabled, paused, etc.).",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/63"
-    },
-    "Path": "/databases/*/indexes/suggest-index-merge",
-    "Method": "GET",
-    "Description": "Suggests indexes that could be merged to improve performance.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/59"
-    },
-    "Path": "/databases/*/indexes/terms",
-    "Method": "GET",
-    "Description": "Returns all terms in a specified index field. Useful for introspection, debugging, and implementing auto-complete functionality.",
-    "Handler": "IndexHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/60"
-    },
-    "Path": "/databases/*/indexes/total-time",
-    "Method": "GET",
-    "Description": "Returns total indexing time statistics.",
-    "Handler": "IndexHandler",
-    "QueryParams": [
-      {
-        "Name": "fromValue",
-        "Required": false,
-        "Description": "The starting term value for pagination.",
-        "Type": "string"
-      },
-      {
-        "Name": "pageSize",
-        "Required": false,
-        "Description": "Maximum number of terms to return.",
-        "Type": "int",
-        "DefaultValue": "int.MaxValue"
-      }
-    ]
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/172"
-    },
-    "Path": "/databases/*/info/tcp",
-    "Method": "GET",
-    "Description": "Returns tcp information.",
-    "Handler": "DatabaseTcpConnectionInfoHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/5"
-    },
-    "Path": "/databases/*/metrics",
-    "Method": "GET",
-    "Description": "Returns performance metrics for the database including request rates and throughput.",
-    "Handler": "StatsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/7"
-    },
-    "Path": "/databases/*/metrics/bytes",
-    "Method": "GET",
-    "Description": "Returns metrics on data transfer in bytes for the database.",
-    "Handler": "StatsHandler",
-    "QueryParams": [
-      {
-        "Name": "empty",
-        "Required": false,
-        "Description": "Filter out empty metrics.",
-        "Type": "bool",
-        "DefaultValue": "true"
-      }
-    ]
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/6"
-    },
-    "Path": "/databases/*/metrics/puts",
-    "Method": "GET",
-    "Description": "Returns metrics specific to document write operations (puts).",
-    "Handler": "StatsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/189"
-    },
-    "Path": "/databases/*/notification-center/stats",
-    "Method": "GET",
-    "Description": "Returns stats information.",
-    "Handler": "DatabaseNotificationCenterHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/188"
-    },
-    "Path": "/databases/*/notification-center/watch",
-    "Method": "GET",
-    "Description": "Returns watch information.",
-    "Handler": "DatabaseNotificationCenterHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/187"
-    },
-    "Path": "/databases/*/notifications",
-    "Method": "GET",
-    "Description": "Returns notifications information.",
-    "Handler": "DatabaseNotificationCenterHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/183"
-    },
-    "Path": "/databases/*/operations",
-    "Method": "GET",
-    "Description": "Returns operations information.",
-    "Handler": "OperationsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/182"
-    },
-    "Path": "/databases/*/operations/next-operation-id",
-    "Method": "GET",
-    "Description": "Returns next-operation-id information.",
-    "Handler": "OperationsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/184"
-    },
-    "Path": "/databases/*/operations/state",
-    "Method": "GET",
-    "Description": "Returns state information.",
-    "Handler": "OperationsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/8"
-    },
-    "Path": "/databases/*/queries",
-    "Method": "GET",
-    "Description": "Executes a RQL (Raven Query Language) query and returns matching documents. Supports projections, filtering, ordering, and includes.",
-    "Handler": "QueriesHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
       "@id": "endpoints/161"
     },
     "Path": "/databases/*/queue-sink/performance/live",
     "Method": "GET",
     "Description": "Returns live information.",
     "Handler": "QueueSinkHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/82"
-    },
-    "Path": "/databases/*/refresh/config",
-    "Method": "GET",
-    "Description": "Returns refresh configuration.",
-    "Handler": "RefreshHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/40"
-    },
-    "Path": "/databases/*/replication/active-connections",
-    "Method": "GET",
-    "Description": "Returns active replication connections.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/36"
-    },
-    "Path": "/databases/*/replication/conflicts",
-    "Method": "GET",
-    "Description": "Returns replication conflicts.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/45"
-    },
-    "Path": "/databases/*/replication/conflicts/solver",
-    "Method": "GET",
-    "Description": "Returns solver information.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/42"
-    },
-    "Path": "/databases/*/replication/debug/incoming-last-activity-time",
-    "Method": "GET",
-    "Description": "Returns incoming-last-activity-time information.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/43"
-    },
-    "Path": "/databases/*/replication/debug/incoming-rejection-info",
-    "Method": "GET",
-    "Description": "Returns incoming-rejection-info information.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/41"
-    },
-    "Path": "/databases/*/replication/debug/outgoing-failures",
-    "Method": "GET",
-    "Description": "Returns outgoing-failures information.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/44"
-    },
-    "Path": "/databases/*/replication/debug/outgoing-reconnect-queue",
-    "Method": "GET",
-    "Description": "Returns outgoing-reconnect-queue information.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/48"
-    },
-    "Path": "/databases/*/replication/internal/outgoing/progress",
-    "Method": "GET",
-    "Description": "Returns progress information.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/20"
-    },
-    "Path": "/databases/*/replication/lastEtag",
-    "Method": "GET",
-    "Description": "Returns lastEtag information.",
-    "Handler": "LegacyReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/37"
-    },
-    "Path": "/databases/*/replication/performance",
-    "Method": "GET",
-    "Description": "Returns replication performance metrics.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": [
-      {
-        "Name": "start",
-        "Required": false,
-        "Description": "Number of conflicts to skip for pagination.",
-        "Type": "long",
-        "DefaultValue": "0"
-      },
-      {
-        "Name": "pageSize",
-        "Required": false,
-        "Description": "Maximum number of conflicts to return.",
-        "Type": "int",
-        "DefaultValue": "int.MaxValue"
-      }
-    ]
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/38"
-    },
-    "Path": "/databases/*/replication/performance/live",
-    "Method": "GET",
-    "Description": "Returns live replication performance metrics.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/47"
-    },
-    "Path": "/databases/*/replication/progress",
-    "Method": "GET",
-    "Description": "Returns progress information.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/39"
-    },
-    "Path": "/databases/*/replication/pulses/live",
-    "Method": "GET",
-    "Description": "Returns live replication pulse data.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/35"
-    },
-    "Path": "/databases/*/replication/tombstones",
-    "Method": "GET",
-    "Description": "Returns replication tombstone information.",
-    "Handler": "ReplicationHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/69"
-    },
-    "Path": "/databases/*/revisions",
-    "Method": "GET",
-    "Description": "Returns document revisions.",
-    "Handler": "RevisionsHandler",
-    "QueryParams": [
-      {
-        "Name": "id",
-        "Required": true,
-        "Description": "The document ID to get revision count for.",
-        "Type": "string"
-      }
-    ]
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/72"
-    },
-    "Path": "/databases/*/revisions/bin",
-    "Method": "GET",
-    "Description": "Returns documents in the revisions bin.",
-    "Handler": "RevisionsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/81"
-    },
-    "Path": "/databases/*/revisions/bin-cleaner/config",
-    "Method": "GET",
-    "Description": "Returns config information.",
-    "Handler": "RevisionsBinCleanerHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/15"
-    },
-    "Path": "/databases/*/revisions/collections/stats",
-    "Method": "GET",
-    "Description": "Returns statistics for document revisions grouped by collection.",
-    "Handler": "CollectionsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/66"
-    },
-    "Path": "/databases/*/revisions/config",
-    "Method": "GET",
-    "Description": "Returns document revision configuration.",
-    "Handler": "RevisionsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/67"
-    },
-    "Path": "/databases/*/revisions/conflicts/config",
-    "Method": "GET",
-    "Description": "Returns conflict resolution configuration for revisions.",
-    "Handler": "RevisionsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/68"
-    },
-    "Path": "/databases/*/revisions/count",
-    "Method": "GET",
-    "Description": "Returns the count of revisions for a document.",
-    "Handler": "RevisionsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/71"
-    },
-    "Path": "/databases/*/revisions/resolved",
-    "Method": "GET",
-    "Description": "Returns resolved information.",
-    "Handler": "RevisionsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/70"
-    },
-    "Path": "/databases/*/revisions/size",
-    "Method": "GET",
-    "Description": "Returns the size of document revisions.",
-    "Handler": "RevisionsHandler",
-    "QueryParams": [
-      {
-        "Name": "pageSize",
-        "Required": false,
-        "Description": "Maximum number of revisions to return.",
-        "Type": "int",
-        "DefaultValue": "25"
-      },
-      {
-        "Name": "metadataOnly",
-        "Required": false,
-        "Description": "When true, returns only revision metadata without full content.",
-        "Type": "bool",
-        "DefaultValue": "false"
-      }
-    ]
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/23"
-    },
-    "Path": "/databases/*/sorters",
-    "Method": "GET",
-    "Description": "Returns a list of custom sorters defined in the database.",
-    "Handler": "SortersHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/3"
-    },
-    "Path": "/databases/*/stats",
-    "Method": "GET",
-    "Description": "Returns general database statistics including document count, index count, database size, last document etag, and cluster information. Essential for monitoring database health and size.",
-    "Handler": "StatsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/2"
-    },
-    "Path": "/databases/*/stats/detailed",
-    "Method": "GET",
-    "Description": "Returns detailed database statistics with comprehensive metrics including all collection stats, index statistics, storage breakdown, document counts per collection, and performance data. More verbose than /stats endpoint.",
-    "Handler": "StatsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/1"
-    },
-    "Path": "/databases/*/stats/essential",
-    "Method": "GET",
-    "Description": "Returns essential database statistics including document count, index count, and storage size.",
-    "Handler": "StatsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/153"
-    },
-    "Path": "/databases/*/streams/docs",
-    "Method": "GET",
-    "Description": "Streams documents from the database.",
-    "Handler": "StreamingHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/155"
-    },
-    "Path": "/databases/*/streams/queries",
-    "Method": "GET",
-    "Description": "Streams query results.",
-    "Handler": "StreamingHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/154"
-    },
-    "Path": "/databases/*/streams/timeseries",
-    "Method": "GET",
-    "Description": "Streams time series data.",
-    "Handler": "StreamingHandler",
     "QueryParams": []
   },
   {
@@ -1882,45 +2469,12 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/171"
-    },
-    "Path": "/databases/*/studio/collections/fields",
-    "Method": "GET",
-    "Description": "Returns fields information.",
-    "Handler": "StudioCollectionFieldsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/166"
-    },
-    "Path": "/databases/*/studio/collections/preview",
-    "Method": "GET",
-    "Description": "Returns preview information.",
-    "Handler": "StudioCollectionsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
       "@id": "endpoints/164"
     },
     "Path": "/databases/*/studio/footer/stats",
     "Method": "GET",
     "Description": "Returns stats information.",
     "Handler": "StudioStatsHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/170"
-    },
-    "Path": "/databases/*/studio/indexes/errors-count",
-    "Method": "GET",
-    "Description": "Returns errors-count information.",
-    "Handler": "StudioIndexHandler",
     "QueryParams": []
   },
   {
@@ -1937,11 +2491,11 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/168"
+      "@id": "endpoints/166"
     },
-    "Path": "/databases/*/studio/revisions/ids",
+    "Path": "/databases/*/studio/collections/preview",
     "Method": "GET",
-    "Description": "Returns ids information.",
+    "Description": "Returns preview information.",
     "Handler": "StudioCollectionsHandler",
     "QueryParams": []
   },
@@ -1959,6 +2513,17 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
+      "@id": "endpoints/168"
+    },
+    "Path": "/databases/*/studio/revisions/ids",
+    "Method": "GET",
+    "Description": "Returns ids information.",
+    "Handler": "StudioCollectionsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
       "@id": "endpoints/169"
     },
     "Path": "/databases/*/studio/sample-data/classes",
@@ -1970,85 +2535,45 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/27"
+      "@id": "endpoints/170"
     },
-    "Path": "/databases/*/subscriptions",
+    "Path": "/databases/*/studio/indexes/errors-count",
     "Method": "GET",
-    "Description": "Returns a list of all subscriptions in the database.",
-    "Handler": "SubscriptionsHandler",
-    "QueryParams": [
-      {
-        "Name": "name",
-        "Required": true,
-        "Description": "The name of the subscription.",
-        "Type": "string"
-      }
-    ]
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/26"
-    },
-    "Path": "/databases/*/subscriptions/connection-details",
-    "Method": "GET",
-    "Description": "Returns connection details for a subscription.",
-    "Handler": "SubscriptionsHandler",
-    "QueryParams": [
-      {
-        "Name": "name",
-        "Required": true,
-        "Description": "The name of the subscription.",
-        "Type": "string"
-      }
-    ]
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/28"
-    },
-    "Path": "/databases/*/subscriptions/performance/live",
-    "Method": "GET",
-    "Description": "Returns live performance metrics for subscriptions.",
-    "Handler": "SubscriptionsHandler",
-    "QueryParams": [
-      {
-        "Name": "history",
-        "Required": false,
-        "Description": "Include subscription history in the response.",
-        "Type": "bool",
-        "DefaultValue": "false"
-      },
-      {
-        "Name": "running",
-        "Required": false,
-        "Description": "Filter to return only running subscriptions.",
-        "Type": "bool",
-        "DefaultValue": "false"
-      }
-    ]
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/24"
-    },
-    "Path": "/databases/*/subscriptions/state",
-    "Method": "GET",
-    "Description": "Returns the state of a specific subscription.",
-    "Handler": "SubscriptionsHandler",
+    "Description": "Returns errors-count information.",
+    "Handler": "StudioIndexHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/180"
+      "@id": "endpoints/171"
     },
-    "Path": "/databases/*/task",
+    "Path": "/databases/*/studio/collections/fields",
     "Method": "GET",
-    "Description": "Returns task information.",
-    "Handler": "OngoingTasksHandler",
+    "Description": "Returns fields information.",
+    "Handler": "StudioCollectionFieldsHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/172"
+    },
+    "Path": "/databases/*/info/tcp",
+    "Method": "GET",
+    "Description": "Returns tcp information.",
+    "Handler": "DatabaseTcpConnectionInfoHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/173"
+    },
+    "Path": "/databases/*/cmpxchg",
+    "Method": "GET",
+    "Description": "Returns compare-exchange values.",
+    "Handler": "CompareExchangeHandler",
     "QueryParams": []
   },
   {
@@ -2059,6 +2584,72 @@
     "Path": "/databases/*/tasks",
     "Method": "GET",
     "Description": "Returns tasks information.",
+    "Handler": "OngoingTasksHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/175"
+    },
+    "Path": "/databases/*/admin/periodic-backup/config",
+    "Method": "GET",
+    "Description": "Returns config information.",
+    "Handler": "OngoingTasksHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/176"
+    },
+    "Path": "/databases/*/admin/debug/periodic-backup/timers",
+    "Method": "GET",
+    "Description": "Returns timers information.",
+    "Handler": "OngoingTasksHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/177"
+    },
+    "Path": "/databases/*/admin/backup-data-directory",
+    "Method": "GET",
+    "Description": "Returns backup-data-directory information.",
+    "Handler": "OngoingTasksHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/178"
+    },
+    "Path": "/databases/*/admin/backup/running",
+    "Method": "GET",
+    "Description": "Returns running information.",
+    "Handler": "OngoingTasksHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/179"
+    },
+    "Path": "/databases/*/admin/connection-strings",
+    "Method": "GET",
+    "Description": "Returns connection-strings information.",
+    "Handler": "OngoingTasksHandler",
+    "QueryParams": []
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/180"
+    },
+    "Path": "/databases/*/task",
+    "Method": "GET",
+    "Description": "Returns task information.",
     "Handler": "OngoingTasksHandler",
     "QueryParams": []
   },
@@ -2076,129 +2667,89 @@
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/80"
+      "@id": "endpoints/182"
     },
-    "Path": "/databases/*/tcp",
+    "Path": "/databases/*/operations/next-operation-id",
     "Method": "GET",
-    "Description": "Returns TCP connection information.",
-    "Handler": "TcpManagementHandler",
+    "Description": "Returns next-operation-id information.",
+    "Handler": "OperationsHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/88"
+      "@id": "endpoints/183"
     },
-    "Path": "/databases/*/timeseries",
+    "Path": "/databases/*/operations",
     "Method": "GET",
-    "Description": "Returns time series data for a document.",
-    "Handler": "TimeSeriesHandler",
+    "Description": "Returns operations information.",
+    "Handler": "OperationsHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/89"
+      "@id": "endpoints/184"
     },
-    "Path": "/databases/*/timeseries/config",
+    "Path": "/databases/*/operations/state",
     "Method": "GET",
-    "Description": "Returns time series configuration.",
-    "Handler": "TimeSeriesHandler",
+    "Description": "Returns state information.",
+    "Handler": "OperationsHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/90"
+      "@id": "endpoints/185"
     },
-    "Path": "/databases/*/timeseries/debug/segments-summary",
+    "Path": "/databases/*/admin/integrations/postgresql/server/status",
     "Method": "GET",
-    "Description": "Returns debug summary of time series segments.",
-    "Handler": "TimeSeriesHandler",
+    "Description": "Returns status information.",
+    "Handler": "PostgreSqlIntegrationHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/87"
+      "@id": "endpoints/186"
     },
-    "Path": "/databases/*/timeseries/ranges",
+    "Path": "/databases/*/admin/integrations/postgresql/users",
     "Method": "GET",
-    "Description": "Returns time series data within specified ranges.",
-    "Handler": "TimeSeriesHandler",
-    "QueryParams": [
-      {
-        "Name": "docId",
-        "Required": false,
-        "Description": "The document ID to get time series statistics for. If not provided, returns stats for all time series.",
-        "Type": "string"
-      }
-    ]
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/86"
-    },
-    "Path": "/databases/*/timeseries/stats",
-    "Method": "GET",
-    "Description": "Returns statistics for time series data.",
-    "Handler": "TimeSeriesHandler",
+    "Description": "Returns users information.",
+    "Handler": "PostgreSqlIntegrationHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/151"
+      "@id": "endpoints/187"
     },
-    "Path": "/debug/info-package/analyzer/summary",
+    "Path": "/databases/*/notifications",
     "Method": "GET",
-    "Description": "Returns summary information.",
-    "Handler": "DebugPackageAnalyzerHandler",
+    "Description": "Returns notifications information.",
+    "Handler": "DatabaseNotificationCenterHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/152"
+      "@id": "endpoints/188"
     },
-    "Path": "/debug/info-package/analyzer/summary/node",
+    "Path": "/databases/*/notification-center/watch",
     "Method": "GET",
-    "Description": "Returns node information.",
-    "Handler": "DebugPackageAnalyzerHandler",
+    "Description": "Returns watch information.",
+    "Handler": "DatabaseNotificationCenterHandler",
     "QueryParams": []
   },
   {
     "@metadata": {
       "@collection": "Endpoints",
-      "@id": "endpoints/127"
+      "@id": "endpoints/189"
     },
-    "Path": "/debug/queries/running/live",
+    "Path": "/databases/*/notification-center/stats",
     "Method": "GET",
-    "Description": "Returns live information.",
-    "Handler": "ServerWideQueriesDebugHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/108"
-    },
-    "Path": "/debug/server-id",
-    "Method": "GET",
-    "Description": "Returns server-id information.",
-    "Handler": "ServerInfoHandler",
-    "QueryParams": []
-  },
-  {
-    "@metadata": {
-      "@collection": "Endpoints",
-      "@id": "endpoints/77"
-    },
-    "Path": "/secrets/generate",
-    "Method": "GET",
-    "Description": "Returns generate information.",
-    "Handler": "SecretKeyHandler",
+    "Description": "Returns stats information.",
+    "Handler": "DatabaseNotificationCenterHandler",
     "QueryParams": []
   }
 ]

@@ -4,7 +4,7 @@ This directory contains a complete database export of ALL documented RavenDB end
 
 ## Files
 
-### endpoints-metadata.json (58KB)
+### endpoints-metadata.json (72KB)
 JSON array containing all documented endpoint metadata. Each endpoint includes:
 - **Path**: The endpoint URL pattern
 - **Method**: HTTP method (GET, POST, etc.)
@@ -12,8 +12,12 @@ JSON array containing all documented endpoint metadata. Each endpoint includes:
 - **Handler**: C# handler class name
 - **QueryParams**: Array of query parameters with Name, Required, Description, Type, and DefaultValue
 
-### endpoints-export.ravendbdump (48KB)
-RavenDB export format (JSONL) that can be directly imported into any RavenDB database. This is a proper RavenDB database export file.
+### endpoints-export.ravendbdump (72KB)
+**Proper RavenDB database export file** in the official RavenDB smuggler format (JSONL). This file:
+- Contains BuildVersion metadata on the first line
+- Includes all 189 endpoint documents with @metadata (including @change-vector and @last-modified)
+- Can be directly imported into any RavenDB database using the import feature
+- Is in the exact format produced by RavenDB's export API
 
 ## Complete Endpoint Coverage
 
