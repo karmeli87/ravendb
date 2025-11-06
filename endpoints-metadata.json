@@ -1,0 +1,292 @@
+[
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/1"
+    },
+    "Path": "/databases/*/indexes/terms",
+    "Method": "GET",
+    "Description": "Returns all terms in a specified index field. Useful for introspection, debugging, and implementing auto-complete functionality.",
+    "Handler": "IndexHandler",
+    "MethodName": "Terms",
+    "QueryParams": [
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the index.",
+        "Type": "string"
+      },
+      {
+        "Name": "field",
+        "Required": true,
+        "Description": "The index field to extract terms from.",
+        "Type": "string"
+      },
+      {
+        "Name": "fromValue",
+        "Required": false,
+        "Description": "The starting term value for pagination.",
+        "Type": "string",
+        "DefaultValue": ""
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of terms to return.",
+        "Type": "int",
+        "DefaultValue": "int.MaxValue"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/2"
+    },
+    "Path": "/databases/*/docs",
+    "Method": "GET",
+    "Description": "Returns documents from the database. Supports ETags for conditional requests via If-None-Match header.",
+    "Handler": "DocumentHandler",
+    "MethodName": "Get",
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": false,
+        "Description": "Specific document ID(s) to retrieve. Can be specified multiple times.",
+        "Type": "string[]"
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of documents to skip for pagination.",
+        "Type": "int",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of documents to return.",
+        "Type": "int"
+      },
+      {
+        "Name": "metadataOnly",
+        "Required": false,
+        "Description": "When true, returns only document metadata without full content.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/3"
+    },
+    "Path": "/databases/*/timeseries",
+    "Method": "GET",
+    "Description": "Returns time series data for a document.",
+    "Handler": "TimeSeriesHandler",
+    "MethodName": "Read",
+    "QueryParams": [
+      {
+        "Name": "docId",
+        "Required": true,
+        "Description": "The document ID containing the time series."
+      },
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the time series."
+      },
+      {
+        "Name": "from",
+        "Required": false,
+        "Description": "Start date/time for the range.",
+        "Type": "DateTime"
+      },
+      {
+        "Name": "to",
+        "Required": false,
+        "Description": "End date/time for the range.",
+        "Type": "DateTime"
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of entries to skip for pagination.",
+        "Type": "int",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of entries to return.",
+        "Type": "int",
+        "DefaultValue": "25"
+      },
+      {
+        "Name": "includeDocument",
+        "Required": false,
+        "Description": "Include the document data in the response.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      },
+      {
+        "Name": "includeTags",
+        "Required": false,
+        "Description": "Include tag information in the response.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      },
+      {
+        "Name": "full",
+        "Required": false,
+        "Description": "Return full results with all details.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/4"
+    },
+    "Path": "/databases/*/revisions",
+    "Method": "GET",
+    "Description": "Returns document revisions with optional filtering by date, change vector, or metadata-only mode.",
+    "Handler": "RevisionsHandler",
+    "MethodName": "GetRevisions",
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": false,
+        "Description": "The document ID to get revisions for."
+      },
+      {
+        "Name": "changeVector",
+        "Required": false,
+        "Description": "Specific change vector to retrieve a revision by."
+      },
+      {
+        "Name": "before",
+        "Required": false,
+        "Description": "Return revisions before this date.",
+        "Type": "DateTime"
+      },
+      {
+        "Name": "start",
+        "Required": false,
+        "Description": "Number of revisions to skip for pagination.",
+        "Type": "int",
+        "DefaultValue": "0"
+      },
+      {
+        "Name": "pageSize",
+        "Required": false,
+        "Description": "Maximum number of revisions to return.",
+        "Type": "int",
+        "DefaultValue": "25"
+      },
+      {
+        "Name": "metadataOnly",
+        "Required": false,
+        "Description": "When true, returns only revision metadata without full content.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/5"
+    },
+    "Path": "/databases/*/subscriptions",
+    "Method": "GET",
+    "Description": "Returns a list of all subscriptions in the database.",
+    "Handler": "SubscriptionsHandler",
+    "MethodName": "GetAll",
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": false,
+        "Description": "The specific subscription ID to retrieve.",
+        "Type": "long"
+      },
+      {
+        "Name": "name",
+        "Required": false,
+        "Description": "The specific subscription name to retrieve."
+      },
+      {
+        "Name": "history",
+        "Required": false,
+        "Description": "Include subscription history in the response.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      },
+      {
+        "Name": "running",
+        "Required": false,
+        "Description": "Filter to return only running subscriptions.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/6"
+    },
+    "Path": "/databases/*/attachments",
+    "Method": "GET",
+    "Description": "Returns attachment metadata or content.",
+    "Handler": "AttachmentHandler",
+    "MethodName": "Get",
+    "QueryParams": [
+      {
+        "Name": "id",
+        "Required": true,
+        "Description": "The document ID that has the attachment."
+      },
+      {
+        "Name": "name",
+        "Required": true,
+        "Description": "The name of the attachment."
+      }
+    ]
+  },
+  {
+    "@metadata": {
+      "@collection": "Endpoints",
+      "@id": "endpoints/7"
+    },
+    "Path": "/databases/*/counters",
+    "Method": "GET",
+    "Description": "Returns counter values for specified documents.",
+    "Handler": "CountersHandler",
+    "MethodName": "Get",
+    "QueryParams": [
+      {
+        "Name": "docId",
+        "Required": true,
+        "Description": "The document ID containing the counters."
+      },
+      {
+        "Name": "counter",
+        "Required": false,
+        "Description": "Specific counter name(s) to retrieve. Can be specified multiple times. If not provided, returns all counters for the document.",
+        "Type": "string[]"
+      },
+      {
+        "Name": "full",
+        "Required": false,
+        "Description": "Return full counter details including change vectors.",
+        "Type": "bool",
+        "DefaultValue": "false"
+      }
+    ]
+  }
+]

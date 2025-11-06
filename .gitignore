@@ -155,7 +155,3 @@ src/Sparrow.Server/Utils/VxSort/codegen/__pycache__/
 
 .claude/
 .cache/
-
-# Endpoint export files (artifacts)
-endpoints-export.ravendbdump
-endpoints-metadata.json
