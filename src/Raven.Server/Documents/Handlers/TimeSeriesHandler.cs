@@ -21,6 +21,7 @@ namespace Raven.Server.Documents.Handlers
     public sealed class TimeSeriesHandler : DatabaseRequestHandler
     {
         [RavenAction("/databases/*/timeseries/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns statistics for time series data.")]
+        [RavenActionQueryParameter("docId", false, "The document ID to get time series statistics for. If not provided, returns stats for all time series.")]
         public async Task Stats()
         {
             using (var processor = new TimeSeriesHandlerProcessorForGetTimeSeriesStats(this))
@@ -30,6 +31,12 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/timeseries/ranges", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns time series data within specified ranges.")]
+        [RavenActionQueryParameter("docId", true, "The document ID containing the time series.")]
+        [RavenActionQueryParameter("name", true, "The name of the time series.")]
+        [RavenActionQueryParameter("from", false, "Start date/time for the range query.", Type = "DateTime")]
+        [RavenActionQueryParameter("to", false, "End date/time for the range query.", Type = "DateTime")]
+        [RavenActionQueryParameter("start", false, "Number of entries to skip for pagination.", Type = "int", DefaultValue = "0")]
+        [RavenActionQueryParameter("pageSize", false, "Maximum number of entries to return.", Type = "int", DefaultValue = "25")]
         public async Task ReadRanges()
         {
             using (var processor = new TimeSeriesHandlerProcessorForGetTimeSeriesRanges(this))
@@ -103,6 +110,15 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/timeseries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns time series data for a document.")]
+        [RavenActionQueryParameter("docId", true, "The document ID containing the time series.")]
+        [RavenActionQueryParameter("name", true, "The name of the time series.")]
+        [RavenActionQueryParameter("from", false, "Start date/time for the range.", Type = "DateTime")]
+        [RavenActionQueryParameter("to", false, "End date/time for the range.", Type = "DateTime")]
+        [RavenActionQueryParameter("start", false, "Number of entries to skip for pagination.", Type = "int", DefaultValue = "0")]
+        [RavenActionQueryParameter("pageSize", false, "Maximum number of entries to return.", Type = "int", DefaultValue = "25")]
+        [RavenActionQueryParameter("includeDocument", false, "Include the document data in the response.", Type = "bool", DefaultValue = "false")]
+        [RavenActionQueryParameter("includeTags", false, "Include tag information in the response.", Type = "bool", DefaultValue = "false")]
+        [RavenActionQueryParameter("full", false, "Return full results with all details.", Type = "bool", DefaultValue = "false")]
         public async Task Read()
         {
             using (var processor = new TimeSeriesHandlerProcessorForGetTimeSeries(this))

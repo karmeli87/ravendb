@@ -30,6 +30,7 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/revisions/count", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns the count of revisions for a document.")]
+        [RavenActionQueryParameter("id", true, "The document ID to get revision count for.")]
         public async Task GetRevisionsCountFor()
         {
             using (var processor = new RevisionsHandlerProcessorForGetRevisionsCount(this))
@@ -37,6 +38,12 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/revisions", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns document revisions.")]
+        [RavenActionQueryParameter("id", false, "The document ID to get revisions for. Mutually exclusive with changeVector parameter.")]
+        [RavenActionQueryParameter("changeVector", false, "Specific change vector(s) to retrieve revisions for. Can be specified multiple times. Mutually exclusive with id parameter.", Type = "string[]")]
+        [RavenActionQueryParameter("before", false, "Return revisions created before this date. Only used with id parameter.", Type = "DateTime")]
+        [RavenActionQueryParameter("start", false, "Number of revisions to skip for pagination.", Type = "int", DefaultValue = "0")]
+        [RavenActionQueryParameter("pageSize", false, "Maximum number of revisions to return.", Type = "int", DefaultValue = "25")]
+        [RavenActionQueryParameter("metadataOnly", false, "When true, returns only revision metadata without full content.", Type = "bool", DefaultValue = "false")]
         public async Task GetRevisionsFor()
         {
             using (var processor = new RevisionsHandlerProcessorForGetRevisions(this))
@@ -44,6 +51,7 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/revisions/size", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns the size of document revisions.")]
+        [RavenActionQueryParameter("changeVector", true, "The change vector of the revision to get size for.")]
         public async Task GetRevisionsSize()
         {
             RevisionSizeDetails size;

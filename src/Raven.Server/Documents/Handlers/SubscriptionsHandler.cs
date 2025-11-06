@@ -38,6 +38,7 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/subscriptions/state", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns the state of a specific subscription.")]
+        [RavenActionQueryParameter("name", true, "The name of the subscription to get state for.")]
         public async Task GetSubscriptionState()
         {
             using (var processor = new SubscriptionsHandlerProcessorForGetSubscriptionState(this))
@@ -45,6 +46,7 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/debug/subscriptions/resend", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns debugging information for subscription resend operations.")]
+        [RavenActionQueryParameter("name", true, "The name of the subscription.")]
         public async Task GetSubscriptionResend()
         {
             using (var processor = new SubscriptionsHandlerProcessorForGetResend(this))
@@ -52,6 +54,7 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/subscriptions/connection-details", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, CorsMode = CorsMode.Cluster, Description = "Returns connection details for a subscription.")]
+        [RavenActionQueryParameter("name", true, "The name of the subscription.")]
         public async Task GetSubscriptionConnectionDetails()
         {
             using (var processor = new SubscriptionsHandlerProcessorForGetConnectionDetails(this))
@@ -59,6 +62,10 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/subscriptions", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns a list of all subscriptions in the database.")]
+        [RavenActionQueryParameter("id", false, "The specific subscription ID to retrieve.", Type = "long")]
+        [RavenActionQueryParameter("name", false, "The specific subscription name to retrieve.")]
+        [RavenActionQueryParameter("history", false, "Include subscription history in the response.", Type = "bool", DefaultValue = "false")]
+        [RavenActionQueryParameter("running", false, "Filter to return only running subscriptions.", Type = "bool", DefaultValue = "false")]
         public async Task GetAll()
         {
             using (var processor = new SubscriptionsHandlerProcessorForGetSubscription(this))

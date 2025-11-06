@@ -31,6 +31,9 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/replication/conflicts", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns replication conflicts.")]
+        [RavenActionQueryParameter("docId", false, "Specific document ID to get conflicts for. If not provided, returns a preview of all conflicts.")]
+        [RavenActionQueryParameter("start", false, "Number of conflicts to skip for pagination.", Type = "long", DefaultValue = "0")]
+        [RavenActionQueryParameter("pageSize", false, "Maximum number of conflicts to return.", Type = "int", DefaultValue = "int.MaxValue")]
         public async Task GetReplicationConflicts()
         {
             using (var processor = new ReplicationHandlerProcessorForGetConflicts(this))

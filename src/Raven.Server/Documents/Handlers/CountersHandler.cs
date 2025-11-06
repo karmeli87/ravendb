@@ -678,6 +678,9 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/counters", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns counter values for specified documents.")]
+        [RavenActionQueryParameter("docId", true, "The document ID containing the counters.")]
+        [RavenActionQueryParameter("counter", false, "Specific counter name(s) to retrieve. Can be specified multiple times. If not provided, returns all counters for the document.", Type = "string[]")]
+        [RavenActionQueryParameter("full", false, "Return full counter details including change vectors.", Type = "bool", DefaultValue = "false")]
         public async Task Get()
         {
             using (var processor = new CountersHandlerProcessorForGetCounters(this))

@@ -44,6 +44,7 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/metrics/puts", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns metrics specific to document write operations (puts).")]
+        [RavenActionQueryParameter("empty", false, "Filter out empty metrics.", Type = "bool", DefaultValue = "true")]
         public async Task PutsMetrics()
         {
             using (var processor = new StatsHandlerProcessorForGetMetricsPuts(this))
@@ -51,6 +52,7 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/metrics/bytes", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns metrics on data transfer in bytes for the database.")]
+        [RavenActionQueryParameter("empty", false, "Filter out empty metrics.", Type = "bool", DefaultValue = "true")]
         public async Task BytesMetrics()
         {
             using (var processor = new StatsHandlerProcessorForGetMetricsBytes(this))

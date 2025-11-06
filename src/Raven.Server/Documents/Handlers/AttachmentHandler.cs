@@ -22,6 +22,8 @@ namespace Raven.Server.Documents.Handlers
         }
 
         [RavenAction("/databases/*/attachments", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns attachment metadata or content.")]
+        [RavenActionQueryParameter("id", true, "The document ID that has the attachment.")]
+        [RavenActionQueryParameter("name", true, "The name of the attachment.")]
         public async Task Get()
         {
             using (var processor = new AttachmentHandlerProcessorForGetAttachment(this, isDocument: true))
