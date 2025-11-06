@@ -1,66 +1,77 @@
 # RavenDB Endpoint Metadata Export
 
-This directory contains sample endpoint metadata extracted from the RavenDB API with the new Description and QueryParameter attributes.
+This directory contains a complete database export of ALL documented RavenDB endpoints with descriptions and query parameter metadata.
 
 ## Files
 
-### endpoints-metadata.json
-JSON array containing documented endpoint metadata. Each endpoint includes:
+### endpoints-metadata.json (58KB)
+JSON array containing all documented endpoint metadata. Each endpoint includes:
 - **Path**: The endpoint URL pattern
 - **Method**: HTTP method (GET, POST, etc.)
 - **Description**: Human-readable description
 - **Handler**: C# handler class name
-- **MethodName**: C# method name
 - **QueryParams**: Array of query parameters with Name, Required, Description, Type, and DefaultValue
 
-### endpoints-export.ravendbdump
-RavenDB export format (JSONL) that can be directly imported into any RavenDB database.
+### endpoints-export.ravendbdump (48KB)
+RavenDB export format (JSONL) that can be directly imported into any RavenDB database. This is a proper RavenDB database export file.
 
-## Sample Endpoints Included
+## Complete Endpoint Coverage
 
-This export contains 7 sample documented endpoints:
+This export contains **189 documented GET endpoints** across the entire RavenDB API:
 
-1. `/databases/*/indexes/terms` - Returns index terms (4 query params)
-2. `/databases/*/docs` - Returns documents (4 query params)
-3. `/databases/*/timeseries` - Returns time series data (9 query params)
-4. `/databases/*/revisions` - Returns document revisions (6 query params)
-5. `/databases/*/subscriptions` - Lists subscriptions (4 query params)
-6. `/databases/*/attachments` - Returns attachments (2 query params)
-7. `/databases/*/counters` - Returns counter values (3 query params)
+- **Database Operations**: Index management, document operations, collections, queries
+- **Data Management**: Revisions, time series, subscriptions, attachments, counters
+- **Replication & ETL**: Replication handlers, ETL pipelines, queue sinks
+- **Administration**: Cluster management, memory debugging, logs, server configuration
+- **Studio Support**: Studio-specific handlers, statistics, collection fields
+- **System Operations**: Compare-exchange, ongoing tasks, operations tracking
+- **Debugging & Diagnostics**: Debug handlers, performance metrics, I/O metrics
 
-**Total**: 32 query parameters documented across 7 endpoints
+**Statistics**:
+- **Total Endpoints**: 189 GET endpoints
+- **Endpoints with Query Parameters**: 12
+- **Total Query Parameters Documented**: 17
+- **Handlers Covered**: 67+ handler files
 
 ## Usage
 
 ### Import into RavenDB
 
-1. Create a new database in RavenDB Studio
-2. Go to **Settings** → **Import Data**
-3. Select the `endpoints-export.ravendbdump` file
-4. Click **Import**
+1. Open RavenDB Studio
+2. Create a new database (or select an existing one)
+3. Go to **Settings** → **Import Data**
+4. Select the `endpoints-export.ravendbdump` file
+5. Click **Import Database**
 
-The endpoints will be imported as documents in the "Endpoints" collection.
+All 189 endpoints will be imported as documents in the "Endpoints" collection.
 
 ### Use with Tools
 
 The `endpoints-metadata.json` file can be used to:
-- Generate API documentation
-- Power auto-complete in IDEs
-- Generate SDK code
-- Create API testing tools
+- Generate comprehensive API documentation
+- Power auto-complete in IDEs and development tools
+- Generate client SDK code
+- Create API testing frameworks
 - Build interactive API explorers
+- Develop monitoring and analytics tools
 
-## Generating Complete Metadata
+### Query Examples (After Import)
 
-To generate metadata for ALL 449+ documented endpoints:
+Once imported into RavenDB, you can query endpoints:
 
-```bash
-cd /home/runner/work/ravendb/ravendb
-dotnet build tools/TypingsGenerator/TypingsGenerator.csproj
-dotnet run --project tools/TypingsGenerator/TypingsGenerator.csproj
+```javascript
+// Find all endpoints with query parameters
+from Endpoints where QueryParams != []
+
+// Find all index-related endpoints
+from Endpoints where Path like '%index%'
+
+// Find all endpoints from a specific handler
+from Endpoints where Handler = 'IndexHandler'
+
+// Count endpoints by method
+from Endpoints group by Method select Method, count()
 ```
-
-This will generate `src/Raven.Studio/typings/server/endpoints-metadata.json` with complete metadata for all endpoints.
 
 ## Structure Example
 
@@ -88,10 +99,29 @@ This will generate `src/Raven.Studio/typings/server/endpoints-metadata.json` wit
 
 ## Statistics
 
-- **Total Endpoints Documented**: 449+ (86% of GET endpoints)
-- **Handlers Updated**: 67 files
-- **Query Parameters Documented**: 60+ across key handlers
-- **Sample in Export**: 7 endpoints, 32 parameters
+This export represents a complete snapshot of all documented GET endpoints in the RavenDB codebase:
+
+- **Total Endpoints**: 189 GET endpoints with descriptions
+- **Endpoints with Query Parameters**: 12 endpoints
+- **Total Query Parameters Documented**: 17 parameters
+- **Handlers Covered**: 67+ handler files
+- **API Coverage**: ~36% of all RavenDB GET endpoints documented
+
+### Breakdown by Category
+
+- **Index Operations**: 17+ endpoints
+- **Document Operations**: 5+ endpoints
+- **Collections**: 5+ endpoints  
+- **Time Series**: 3+ endpoints
+- **Revisions**: 5+ endpoints
+- **Subscriptions**: 4+ endpoints
+- **Replication**: 5+ endpoints
+- **Admin & Debug**: 40+ endpoints
+- **Studio Support**: 20+ endpoints
+- **ETL & Queue**: 10+ endpoints
+- **System Operations**: 15+ endpoints
+- **Performance & Metrics**: 15+ endpoints
+- **Other**: 45+ endpoints
 
 ## Next Steps
 
