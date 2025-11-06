@@ -6,7 +6,7 @@ namespace Raven.Server.Documents.Handlers
 {
     public sealed class CollectionsHandler : DatabaseRequestHandler
     {
-        [RavenAction("/databases/*/collections/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns statistics for all collections in the database.")]
+        [RavenAction("/databases/*/collections/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns statistics for all collections in the database including document counts, size estimates, and last document etag per collection. Lightweight alternative to detailed stats.")]
         public async Task GetCollectionStats()
         {
             using (var processor = new CollectionsHandlerProcessorForGetCollectionStats(this, detailed: false))
@@ -20,7 +20,10 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/collections/docs", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns documents from a specified collection.")]
+        [RavenAction("/databases/*/collections/docs", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns documents from a specified collection. Optimized for retrieving all documents of a specific type/collection.")]
+        [RavenActionQueryParameter("name", true, "The collection name to retrieve documents from.")]
+        [RavenActionQueryParameter("start", false, "Number of documents to skip for pagination.", Type = "int", DefaultValue = "0")]
+        [RavenActionQueryParameter("pageSize", false, "Maximum number of documents to return.", Type = "int")]
         public async Task GetCollectionDocuments()
         {
             using (var processor = new CollectionsHandlerProcessorForGetCollectionDocuments(this))

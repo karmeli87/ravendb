@@ -32,7 +32,11 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/docs", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns documents from the database.")]
+        [RavenAction("/databases/*/docs", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns documents from the database. Supports ETags for conditional requests via If-None-Match header.")]
+        [RavenActionQueryParameter("id", false, "Specific document ID(s) to retrieve. Can be specified multiple times.", Type = "string[]")]
+        [RavenActionQueryParameter("start", false, "Number of documents to skip for pagination.", Type = "int", DefaultValue = "0")]
+        [RavenActionQueryParameter("pageSize", false, "Maximum number of documents to return.", Type = "int")]
+        [RavenActionQueryParameter("metadataOnly", false, "When true, returns only document metadata without content.", Type = "bool", DefaultValue = "false")]
         public Task Get()
         {
             // Disposal of the processor is handled in the `ExecuteAsTaskAsync` method.

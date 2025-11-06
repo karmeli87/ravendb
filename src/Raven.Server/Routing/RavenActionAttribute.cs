@@ -103,4 +103,29 @@ namespace Raven.Server.Routing
         UnauthenticatedClients = 4,
         RestrictedAccess = 5
     }
+
+    /// <summary>
+    /// Describes a query parameter for a RavenAction endpoint.
+    /// Multiple instances can be applied to a single method to document all query parameters.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+    public sealed class RavenActionQueryParameterAttribute : Attribute
+    {
+        public string Name { get; }
+        
+        public bool Required { get; }
+        
+        public string Description { get; }
+        
+        public string Type { get; set; }
+        
+        public string DefaultValue { get; set; }
+
+        public RavenActionQueryParameterAttribute(string name, bool required, string description)
+        {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Required = required;
+            Description = description ?? throw new ArgumentNullException(nameof(description));
+        }
+    }
 }

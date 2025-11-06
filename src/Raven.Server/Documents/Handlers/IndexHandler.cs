@@ -94,7 +94,8 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns a list of all indexes in the database.")]
+        [RavenAction("/databases/*/indexes", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns a list of all indexes in the database with their definitions, types, and status.")]
+        [RavenActionQueryParameter("namesOnly", false, "When true, returns only index names instead of full definitions.", Type = "bool", DefaultValue = "false")]
         public async Task GetAll()
         {
             var namesOnly = GetBoolValueQueryString("namesOnly", required: false) ?? false;
@@ -111,7 +112,8 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns statistics for all indexes including entry counts and performance metrics.")]
+        [RavenAction("/databases/*/indexes/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns comprehensive statistics for all indexes including entry counts, map/reduce performance metrics, indexing errors, memory usage, and current state.")]
+        [RavenActionQueryParameter("name", false, "Specific index name(s) to get statistics for. Can be specified multiple times.", Type = "string[]")]
         public async Task Stats()
         {
             using (var processor = new IndexHandlerProcessorForGetDatabaseIndexStatistics(this))
@@ -195,7 +197,11 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/indexes/terms", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Returns all terms in a specified index field for introspection or auto-complete.")]
+        [RavenAction("/databases/*/indexes/terms", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Returns all terms in a specified index field. Useful for introspection, debugging, and implementing auto-complete functionality.")]
+        [RavenActionQueryParameter("name", true, "The name of the index.")]
+        [RavenActionQueryParameter("field", true, "The index field to extract terms from.")]
+        [RavenActionQueryParameter("fromValue", false, "The starting term value for pagination.", DefaultValue = "")]
+        [RavenActionQueryParameter("pageSize", false, "Maximum number of terms to return.", Type = "int", DefaultValue = "int.MaxValue")]
         public async Task Terms()
         {
             using (var processor = new IndexHandlerProcessorForTerms(this))

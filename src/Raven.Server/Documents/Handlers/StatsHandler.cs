@@ -13,14 +13,14 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/stats/detailed", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns detailed database statistics with comprehensive metrics and performance data.")]
+        [RavenAction("/databases/*/stats/detailed", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, Description = "Returns detailed database statistics with comprehensive metrics including all collection stats, index statistics, storage breakdown, document counts per collection, and performance data. More verbose than /stats endpoint.")]
         public async Task DetailedStats()
         {
             using (var processor = new StatsHandlerProcessorForGetDetailedDatabaseStatistics(this))
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns general database statistics and health information.")]
+        [RavenAction("/databases/*/stats", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, IsDebugInformationEndpoint = true, Description = "Returns general database statistics including document count, index count, database size, last document etag, and cluster information. Essential for monitoring database health and size.")]
         public async Task Stats()
         {
             using (var processor = new StatsHandlerProcessorForGetDatabaseStatistics(this))

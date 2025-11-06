@@ -14,7 +14,12 @@ namespace Raven.Server.Documents.Handlers
                 await processor.ExecuteAsync();
         }
 
-        [RavenAction("/databases/*/queries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Executes a query and returns matching documents.")]
+        [RavenAction("/databases/*/queries", "GET", AuthorizationStatus.ValidUser, EndpointType.Read, DisableOnCpuCreditsExhaustion = true, Description = "Executes a RQL (Raven Query Language) query and returns matching documents. Supports projections, filtering, ordering, and includes.")]
+        [RavenActionQueryParameter("query", true, "The RQL query string to execute.")]
+        [RavenActionQueryParameter("start", false, "Number of results to skip for pagination.", Type = "int", DefaultValue = "0")]
+        [RavenActionQueryParameter("pageSize", false, "Maximum number of results to return.", Type = "int")]
+        [RavenActionQueryParameter("waitForNonStaleResults", false, "Wait for non-stale results before returning.", Type = "bool", DefaultValue = "false")]
+        [RavenActionQueryParameter("waitForNonStaleResultsTimeout", false, "Maximum time to wait for non-stale results.", Type = "TimeSpan")]
         public async Task Get()
         {
             using (var processor = new DatabaseQueriesHandlerProcessorForGet(this, HttpMethod.Get))
