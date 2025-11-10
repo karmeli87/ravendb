@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Http.Features.Authentication;
 using Raven.Client.Documents.AI;
 using Raven.Client.Documents.Operations.AI;
 using Raven.Client.Documents.Operations.AI.Agents;
+using Raven.Client.Exceptions;
+using Raven.Server.Documents.AI;
 using Raven.Server.Documents.Handlers.Processors;
 using Raven.Server.ServerWide;
 using Raven.Server.ServerWide.Context;
@@ -58,7 +60,18 @@ namespace Raven.Server.Documents.Handlers.AI.Agents
             }
             else
             {
-                r = await handler.HandleRequest(context, token.Token);
+                try
+                {
+                    r = await handler.HandleRequest(context, token.Token);
+                }
+                catch (ConcurrencyException)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    throw new AiException($"Failed to 'talk' with the agent '{configuration.Identifier}', conversation: '{conversationId}'.", e) { RequestId = null };
+                }
             }
 
             await using var writer = new AsyncBlittableJsonTextWriter(context, RequestHandler.ResponseBodyStream());

@@ -192,6 +192,18 @@ namespace Raven.Server.ServerWide.Commands.AI
                 if (ToolNameChecker.IsMatch(action.Name) == false)
                     throw new InvalidOperationException($"Action name '{action.Name}' is invalid. It must match the pattern: {ToolNameChecker}");
             }
+
+            foreach (var tool in configuration.SubAgents)
+            {
+                if (tool.Identifier == configuration.Identifier)
+                    throw new InvalidOperationException($"Sub Agent Identifier '{tool.Identifier}' is the same as the agent identifier. An agent cannot be its own sub-agent.");
+
+                if (uniqueToolNames.Add(tool.Identifier) == false)
+                    throw new InvalidOperationException($"Sub Agent Identifier '{tool.Identifier}' is not unique. It is already defined in the agent configuration.");
+
+                if (ToolNameChecker.IsMatch(tool.Identifier) == false)
+                    throw new InvalidOperationException($"Sub Agent Identifier '{tool.Identifier}' is invalid. It must match the pattern: {ToolNameChecker}");
+            }
         }
     }
 }

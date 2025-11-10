@@ -72,6 +72,7 @@ using Size = Raven.Client.Util.Size;
 using System.Diagnostics.CodeAnalysis;
 using Raven.Server.Documents.AI;
 using Raven.Server.Documents.AI.Embeddings;
+using Raven.Server.Documents.Handlers.AI.Agents;
 using Raven.Server.Logging;
 using Raven.Server.Rachis;
 using Sparrow.Server.Logging;
@@ -2272,6 +2273,8 @@ namespace Raven.Server.Documents
 
             internal int BulkInsert_StreamReadTimeout;
             internal Action BulkInsert_OnHeartBeat;
+
+            internal Action<ConversationDocument> BeforeAiAgentTalk;
         }
     }
 

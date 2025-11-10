@@ -8,6 +8,7 @@ using Raven.Client.Documents.Operations.AI;
 using Raven.Client.Documents.Operations.AI.Agents;
 using Raven.Client.Json.Serialization;
 using Raven.Server.Documents.AI;
+using Raven.Server.Json;
 using Raven.Server.NotificationCenter.Notifications.Details;
 using Sparrow.Json;
 using Sparrow.Json.Parsing;
@@ -23,6 +24,7 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
     public List<BlittableJsonReaderObject> Messages = [];
     public List<string> LinkedConversations = [];
     public Dictionary<string, AiAgentActionRequest> OpenActionCalls = [];
+    public List<AiSubAgentInstance> SubAgents = [];
     public AiUsage TotalUsage = new AiUsage();
     public AiUsage CurrentUsage = new AiUsage();
     public string ChangeVector;
@@ -85,7 +87,7 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
         RemainingToolIterations = configuration.MaxModelIterationsPerCall ?? ConversationHandler.DefaultMaxModelIterationsPerCall;
     }
 
-    public List<AiToolCall> InitialQueries(JsonOperationContext context, AiAgentConfiguration configuration)
+    public List<AiToolCall> InitialOperations(JsonOperationContext context, AiAgentConfiguration configuration)
     {
         List<AiToolCall> result = null;
 
@@ -201,6 +203,7 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
             [nameof(Parameters)] = Parameters,
             [nameof(Messages)] = Messages,
             [nameof(LinkedConversations)] = LinkedConversations,
+            [nameof(SubAgents)] = new DynamicJsonArray(SubAgents.Select(x => x.ToJson())),
             [nameof(TotalUsage)] = TotalUsage.ToJson(),
             [nameof(OpenActionCalls)] = DynamicJsonValue.Convert(OpenActionCalls),
             [nameof(LastMessageAt)] = LastMessageAt,
@@ -247,6 +250,8 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
             throw new ArgumentException($"Missing Expires in '{id}' conversation document");
         if (document.TryGet(nameof(RemainingToolIterations), out int remainingToolIterations) == false)
             remainingToolIterations = config.MaxModelIterationsPerCall ?? ConversationHandler.DefaultMaxModelIterationsPerCall;
+        if (document.TryGet(nameof(SubAgents), out BlittableJsonReaderArray subAgentsIdsObj) == false)
+            throw new ArgumentException($"Missing SubAgents in '{id}' conversation document");
 
         var openTools = new Dictionary<string, AiAgentActionRequest>();
         foreach (var callId in openToolCalls.GetPropertyNames())
@@ -260,6 +265,7 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
             Id = id,
             Messages = messages.Items.Select(m => ((BlittableJsonReaderObject)m).CloneOnTheSameContext()).ToList(),
             LinkedConversations = historyDocs.Items.Select(s => s.ToString()).ToList(),
+            SubAgents = subAgentsIdsObj.Select(x => JsonDeserializationServer.SubAgentInstance((BlittableJsonReaderObject)x)).ToList(),
             TotalUsage = JsonDeserializationClient.AiUsage(usage),
             OpenActionCalls = openTools,
             LastMessageAt = lastMessageAt,
@@ -275,7 +281,7 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
         return conversation;
     }
 
-    public static List<BlittableJsonReaderObject> GenerateTools(JsonOperationContext context, AiAgentConfiguration configuration)
+    public static List<BlittableJsonReaderObject> GenerateTools(JsonOperationContext context, AiAgentConfiguration configuration, ConversationHandler handler)
     {
         List<BlittableJsonReaderObject> tools = [];
         foreach (var q in configuration.Queries ?? [])
@@ -311,6 +317,34 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
                     ["parameters"] = context.Sync.ReadForMemory(paramsSchema, "params/schema")
                 },
                 ["strict"] = true
+            };
+            tools.Add(context.ReadObject(tool, "tool"));
+        }
+
+        foreach(var a in configuration.SubAgents ?? [])
+        {
+            AiAgentConfiguration agentConfiguration = handler.GetAiAgentConfiguration(a.Identifier);
+            var argsSampleObject = new DynamicJsonValue();
+            foreach (AiAgentParameter parameter in agentConfiguration.Parameters ?? [])
+            {
+                argsSampleObject[parameter.Name] = parameter.Description;
+            }
+
+            argsSampleObject["subAgentUserPrompt"] = "A natural language prompt instructions for the sub-agent to do its work";
+            using var args = context.ReadObject(argsSampleObject, "args");
+            string paramsSchema = ChatCompletionClient.GetSchemaForTool(null, args.ToString());
+            var description = new StringBuilder(a.Description).AppendLine();
+            agentConfiguration.AppendCapabilities(description);
+            var tool = new DynamicJsonValue
+            {
+                [ChatCompletionClient.Constants.JsonSchemaFields.Type] = "function",
+                [ChatCompletionClient.Constants.ResponseFields.Function] = new DynamicJsonValue
+                {
+                    [ChatCompletionClient.Constants.ResponseFields.Name] = a.Identifier,
+                    [ChatCompletionClient.Constants.JsonSchemaFields.Description] = description.ToString(),
+                    ["parameters"] = context.Sync.ReadForMemory(paramsSchema, "params/schema")
+                },
+                [ChatCompletionClient.Constants.JsonSchemaFields.Strict] = true
             };
             tools.Add(context.ReadObject(tool, "tool"));
         }
@@ -427,9 +461,14 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
     private static ToolType GetToolType(AiAgentConfiguration configuration, string name)
     {
         if (configuration.FindAction(name) != null)
-        {
             return ToolType.Action;
-        }
-        return configuration.FindQuery(name) != null ? ToolType.Query : ToolType.Unknown;
+
+        if (configuration.FindQuery(name) != null)
+            return ToolType.Query;
+
+        if (configuration.FindSubAgents(name) != null)
+            return ToolType.SubAgent;
+
+        return ToolType.Unknown;
     }
 }

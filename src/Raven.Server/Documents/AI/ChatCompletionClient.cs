@@ -34,7 +34,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Raven.Server.Documents.AI;
 
-internal class ChatCompletionClient : IDisposable
+public class ChatCompletionClient : IDisposable
 {
     public static readonly string EmptySchema = GetSchemaFromSampleObject("{}");
 
