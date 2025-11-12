@@ -70,7 +70,10 @@ namespace Raven.Server.Documents.Handlers.AI.Agents
                 }
                 catch (Exception e)
                 {
-                    throw new AiException($"Failed to 'talk' with the agent '{configuration.Identifier}', conversation: '{conversationId}'.", e) { RequestId = null };
+                    throw new AiException($"Failed to 'talk' with the agent '{configuration.Identifier}', conversation: '{conversationId}'.", e)
+                    {
+                        RequestId = RequestHandler.HttpContext.Response.Headers.RequestId
+                    };
                 }
             }
 

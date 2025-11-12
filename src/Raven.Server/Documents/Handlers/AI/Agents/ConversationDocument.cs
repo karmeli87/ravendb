@@ -250,8 +250,6 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
             throw new ArgumentException($"Missing Expires in '{id}' conversation document");
         if (document.TryGet(nameof(RemainingToolIterations), out int remainingToolIterations) == false)
             remainingToolIterations = config.MaxModelIterationsPerCall ?? ConversationHandler.DefaultMaxModelIterationsPerCall;
-        if (document.TryGet(nameof(SubAgents), out BlittableJsonReaderArray subAgentsIdsObj) == false)
-            throw new ArgumentException($"Missing SubAgents in '{id}' conversation document");
 
         var openTools = new Dictionary<string, AiAgentActionRequest>();
         foreach (var callId in openToolCalls.GetPropertyNames())
@@ -265,7 +263,6 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
             Id = id,
             Messages = messages.Items.Select(m => ((BlittableJsonReaderObject)m).CloneOnTheSameContext()).ToList(),
             LinkedConversations = historyDocs.Items.Select(s => s.ToString()).ToList(),
-            SubAgents = subAgentsIdsObj.Select(x => JsonDeserializationServer.SubAgentInstance((BlittableJsonReaderObject)x)).ToList(),
             TotalUsage = JsonDeserializationClient.AiUsage(usage),
             OpenActionCalls = openTools,
             LastMessageAt = lastMessageAt,
@@ -278,6 +275,12 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
         {
             conversation.CurrentUsage = JsonDeserializationClient.AiUsage(currentUsageBlittable);
         }
+
+        if (document.TryGet(nameof(SubAgents), out BlittableJsonReaderArray subAgentsIdsObj))
+        {
+            conversation.SubAgents = subAgentsIdsObj.Select(x => JsonDeserializationServer.SubAgentInstance((BlittableJsonReaderObject)x)).ToList();
+        }
+
         return conversation;
     }
 
@@ -321,11 +324,11 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
             tools.Add(context.ReadObject(tool, "tool"));
         }
 
-        foreach(var a in configuration.SubAgents ?? [])
+        foreach(var subAgent in configuration.SubAgents ?? [])
         {
-            AiAgentConfiguration agentConfiguration = handler.GetAiAgentConfiguration(a.Identifier);
+            AiAgentConfiguration subAgentConfiguration = handler.GetAiAgentConfiguration(subAgent.Identifier);
             var argsSampleObject = new DynamicJsonValue();
-            foreach (AiAgentParameter parameter in agentConfiguration.Parameters ?? [])
+            foreach (AiAgentParameter parameter in subAgentConfiguration.Parameters ?? [])
             {
                 argsSampleObject[parameter.Name] = parameter.Description;
             }
@@ -333,14 +336,14 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
             argsSampleObject["subAgentUserPrompt"] = "A natural language prompt instructions for the sub-agent to do its work";
             using var args = context.ReadObject(argsSampleObject, "args");
             string paramsSchema = ChatCompletionClient.GetSchemaForTool(null, args.ToString());
-            var description = new StringBuilder(a.Description).AppendLine();
-            agentConfiguration.AppendCapabilities(description);
+            var description = new StringBuilder(subAgent.Description).AppendLine();
+            subAgentConfiguration.AppendCapabilities(description);
             var tool = new DynamicJsonValue
             {
                 [ChatCompletionClient.Constants.JsonSchemaFields.Type] = "function",
                 [ChatCompletionClient.Constants.ResponseFields.Function] = new DynamicJsonValue
                 {
-                    [ChatCompletionClient.Constants.ResponseFields.Name] = a.Identifier,
+                    [ChatCompletionClient.Constants.ResponseFields.Name] = subAgent.Identifier,
                     [ChatCompletionClient.Constants.JsonSchemaFields.Description] = description.ToString(),
                     ["parameters"] = context.Sync.ReadForMemory(paramsSchema, "params/schema")
                 },

@@ -410,12 +410,20 @@ public class ConversationHandler(ServerStore server, DocumentDatabase database)
                     }
                     catch (Exception e)
                     {
+                        var sb = new StringBuilder();
+                        while (e != null)
+                        {
+                            sb.AppendLine(e.Message);
+                            e = e.InnerException;
+                        }
+                        var msg = sb.ToString().Trim();
+
                         _document.AddMessage(context, context.ReadObject(
                             new DynamicJsonValue
                             {
                                 ["tool_call_id"] = call.Id,
                                 ["role"] = "tool",
-                                ["content"] = "Failure calling " + call.Id + ", because: " + e.Message
+                                ["content"] = "Failure calling " + call.Name + ", because: " + msg
                             }, "tool-call/response"), usage: null);
                         continue;
                     }
@@ -435,7 +443,7 @@ public class ConversationHandler(ServerStore server, DocumentDatabase database)
             {
                 case AiAgentToolQuery:
                     if (requestResult.TryGet(nameof(QueryResult.Results), out BlittableJsonReaderArray queryResult) is false)
-                        throw new InvalidOperationException("Missing Results from query output");
+                        throw new InvalidOperationException($"Query output is missing the '{nameof(QueryResult.Results)}' field. (Query - Id: {currentCall.Id}, Name: {currentCall.Name})");
 
                     _document.AddMessage(context, context.ReadObject(
                         new DynamicJsonValue
@@ -447,9 +455,9 @@ public class ConversationHandler(ServerStore server, DocumentDatabase database)
                     break;
                 case AiAgentToolSubAgent:
                     if (requestResult.TryGet(nameof(ConversationResult<object>.Response), out BlittableJsonReaderObject agentResult) is false)
-                        throw new InvalidOperationException("Missing Results from query output");
+                        throw new InvalidOperationException($"Sub-agent query output is missing the '{nameof(ConversationResult<object>.Response)}' field inside '{nameof(QueryResult.Results)}'. (Query - Id: {currentCall.Id}, Name: {currentCall.Name})");
                     if (requestResult.TryGet(nameof(ConversationResult<object>.ActionRequests), out BlittableJsonReaderArray actionRequests) is false)
-                        throw new InvalidOperationException("Missing ActionRequests from query output");
+                        throw new InvalidOperationException($"Sub-agent query output is missing the '{nameof(ConversationResult<object>.ActionRequests)}' field inside '{nameof(QueryResult.Results)}'. (Query - Id: {currentCall.Id}, Name: {currentCall.Name})");
 
                     if (actionRequests?.Length > 0)
                     {
@@ -539,9 +547,17 @@ public class ConversationHandler(ServerStore server, DocumentDatabase database)
         }
         else
         {
+            // Each sub-agent is indexed sequentially under its parent agent.
             agentIndex = document.SubAgents.Count + 1;
-            string conversationId = document.Id + "/" + call.Name + "/" + agentIndex;
+
+            // Unique conversation identifier for this sub-agent (includes document ID, call name, and index).
+            var conversationId = document.Id + "/" + call.Name + "/" + agentIndex;
+
+            // subConversationParamsHash - a hash representing the configuration or parameters of the sub-agent’s conversation.
+            // This ensures we can identify equivalent sub-agent instances deterministically.
             instance = new AiSubAgentInstance(call.Name, conversationId, subConversationParamsHash);
+
+            // Add the new sub-agent instance to the list of sub-agents managed by this agent document.
             document.SubAgents.Add(instance);
         }
 
@@ -694,9 +710,9 @@ public class ConversationHandler(ServerStore server, DocumentDatabase database)
             await foreach (var (requestResult, i) in ExecuteMultiRequests(context, reqs))
             {
                 if (requestResult.TryGet(nameof(ConversationResult<object>.Response), out BlittableJsonReaderObject agentResult) is false)
-                    throw new InvalidOperationException("Missing Results from query output");
+                    throw new InvalidOperationException($"Sub-Agent result is missing the '{nameof(ConversationResult<object>.Response)}' field in query output in '{_conversationId}' (Sub-Agent: {subAgents[i].Agent}, Sub-Agent ConversationId: {subAgents[i].ConversationId}).");
                 if (requestResult.TryGet(nameof(ConversationResult<object>.ActionRequests), out BlittableJsonReaderArray actionRequests) is false)
-                    throw new InvalidOperationException("Missing ActionRequests from query output");
+                    throw new InvalidOperationException($"Sub-Agent result is missing the '{nameof(ConversationResult<object>.ActionRequests)}' field in query output in '{_conversationId}' (Sub-Agent: {subAgents[i].Agent}, Sub-Agent ConversationId: {subAgents[i].ConversationId}).");
 
                 if (actionRequests?.Length > 0)
                 {
@@ -704,7 +720,7 @@ public class ConversationHandler(ServerStore server, DocumentDatabase database)
                 }
 
                 if (requestResult.TryGet(nameof(ConversationResult<object>.ConversationId), out string subAgentConversationId) is false)
-                    throw new InvalidOperationException("Missing TotalUsage from query output");
+                    throw new InvalidOperationException($"Sub-Agent result is missing the '{nameof(ConversationResult<object>.ConversationId)}' field in query output  in '{_conversationId}' (sub-agent: {subAgents[i].Agent},  sub-agent ConversationId: {subAgents[i].ConversationId}).");
 
                 bool found = false;
                 foreach (var (toolCallId, openAction) in _document.OpenActionCalls)
