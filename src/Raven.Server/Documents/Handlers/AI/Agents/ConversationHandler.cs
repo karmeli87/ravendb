@@ -84,6 +84,7 @@ public class ConversationHandler(ServerStore server, DocumentDatabase database)
             }
 
             _document = new ConversationDocument(agentId, _request.Parameters);
+            _document.Id = await GetDocumentIdAsync();
 
             if (_request.CreationOptions.ExpirationInSec.HasValue)
             {
@@ -640,18 +641,23 @@ public class ConversationHandler(ServerStore server, DocumentDatabase database)
 
     protected virtual async Task<string> TryPersistAsync(JsonOperationContext context, List<BlittableJsonReaderObject> historyDocs)
     {
-        if (_conversationId[^1] == '|')
-        {
-            var r = await server.GenerateClusterIdentityAsync(_conversationId, database.IdentityPartsSeparator, database.Name, _raftId ?? Guid.NewGuid().ToString());
-            _conversationId = r.ClusterId;
-        }
-
         var changeVectorLsv = context.GetLazyString(_document.ChangeVector);
-        var cmd = new PutConversationCommand(_conversationId, _document, historyDocs, changeVectorLsv, _configuration, database);
+        var cmd = new PutConversationCommand(_document, historyDocs, changeVectorLsv, _configuration, database);
         await database.TxMerger.Enqueue(cmd);
         _document.ChangeVector = cmd.PutResult.ChangeVector;
-        _document.Id = cmd.PutResult.Id;
         return cmd.PutResult.Id;
+    }
+
+    private async Task<string> GetDocumentIdAsync()
+    {
+        var id = _conversationId;
+        if (id[^1] == '|')
+        {
+            var r = await server.GenerateClusterIdentityAsync(id, database.IdentityPartsSeparator, database.Name, _raftId ?? Guid.NewGuid().ToString());
+            id = r.ClusterId;
+        }
+
+        return database.DocumentsStorage.DocumentPut.BuildDocumentId(id, database.DocumentsStorage.GenerateNextEtag(), out _);
     }
 
     private async Task<bool> TryHandleActionResponses(JsonOperationContext context)

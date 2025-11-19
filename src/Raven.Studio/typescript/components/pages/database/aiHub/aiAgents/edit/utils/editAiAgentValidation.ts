@@ -151,6 +151,15 @@ const editSchema = yup.object({
             maxTokensAfterSummarization: yup.number().nullable().positive().integer(),
         })
         .nullable(),
+
+    subAgents: yup
+        .array()
+        .of(
+            yup.object({
+                identifier: yup.string().required("Identifier is required"),
+                description: yup.string().required("Description is required"),
+            })
+        ),
 });
 
 function getIsToolNameUnique(value: string, ctx: yup.TestContext<EditAiAgentValidationContext>): boolean {

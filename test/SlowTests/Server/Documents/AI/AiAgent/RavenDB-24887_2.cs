@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using FastTests;
 using Newtonsoft.Json;
 using Raven.Client.Documents;
 using Raven.Client.Documents.AI;
 using Raven.Client.Documents.Indexes;
+using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Operations.AI;
 using Raven.Client.Documents.Operations.AI.Agents;
 using Raven.Client.Documents.Operations.ConnectionStrings;
@@ -432,29 +431,30 @@ public class RavenDB_24887_2(ITestOutputHelper output) : RavenTestBase(output)
             Assert.Equal("Aviv Rachmani", name);
         }
 
-        static async Task<object> ChangeUserNameAsync(IDocumentStore store, ChangeUserNameSampleRequest req)
+    }
+
+    private static async Task<object> ChangeUserNameAsync(IDocumentStore store, ChangeUserNameSampleRequest req)
+    {
+        using (var session = store.OpenAsyncSession())
         {
-            using (var session = store.OpenAsyncSession())
+            var user = await session.LoadAsync<User>(req.UserId);
+            if (user.Name.ToLower() != req.OldUserName.ToLower())
             {
-                var user = await session.LoadAsync<User>(req.UserId);
-                if (user.Name.ToLower() != req.OldUserName.ToLower())
-                {
-                    return new ActionToolResult
-                    {
-                        IsSuccessful = false,
-                        Answer = $"Your old name isn't '{req.OldUserName}'"
-                    };
-                }
-
-                user.Name = req.NewUserName;
-                await session.SaveChangesAsync();
-
                 return new ActionToolResult
                 {
-                    IsSuccessful = true,
-                    Answer = $"Name of user '{user.Id}' changed from '{req.OldUserName}' to '{req.NewUserName}'"
+                    IsSuccessful = false,
+                    Answer = $"Your old name isn't '{req.OldUserName}'"
                 };
             }
+
+            user.Name = req.NewUserName;
+            await session.SaveChangesAsync();
+
+            return new ActionToolResult
+            {
+                IsSuccessful = true,
+                Answer = $"Name of user '{user.Id}' changed from '{req.OldUserName}' to '{req.NewUserName}'"
+            };
         }
     }
 
@@ -529,14 +529,453 @@ public class RavenDB_24887_2(ITestOutputHelper output) : RavenTestBase(output)
         userAgent1.Parameters.Add(new AiAgentParameter("currentUserId", "the id of the current user that you talk with"));
         var userAgent1Id = (await store.AI.CreateAgentAsync<MoviesSampleObject>(userAgent1, MoviesSampleObject.Instance)).Identifier;
 
-        // WaitForUserToContinueTheTest(store, false);
-
         var chat = store.AI.Conversation(userAgent1Id, "chats/1",
             new AiConversationCreationOptions().AddParameter("currentUserId", "Users/1"));
         chat.SetUserPrompt("Whats my name?");
         var r = await chat.RunAsync<MoviesSampleObject>();
         Assert.NotNull(r.Answer);
         Assert.Contains("shahar", r.Answer.Answer.ToLower());
+        Assert.Equal(AiConversationResult.Done, r.Status);
+    }
+
+    [RavenTheory(RavenTestCategory.Ai)]
+    [RavenGenAiData(IntegrationType = RavenAiIntegration.OpenAi, DatabaseMode = RavenDatabaseMode.Single)]
+    public async Task SubAgent2OpenActionTools(Options options, GenAiConfiguration config)
+    {
+        using var store = GetDocumentStore(options);
+        await store.Maintenance.SendAsync(new PutConnectionStringOperation<AiConnectionString>(config.Connection));
+        await CreateMoviesDatabase(store);
+
+        var userAgent2 = new AiAgentConfiguration("user-info-agent-2",
+            config.ConnectionStringName,
+            "You are authorized to edit the user's name and to create movie-rating records associated with the user." +
+            "Use exclusively the 'ChangeUserName' tool for changing the user's name. " +
+            "Use exclusively the 'RateMovie' tool for adding a movie-rating record (rating a movie). " +
+            "Do not perform these actions in any other way."
+        )
+        {
+            Actions = new List<AiAgentToolAction>()
+            {
+                new AiAgentToolAction("ChangeUserName",
+                    "Updates the name of the current user interacting with the AI agent. have to send also the old name for validation.")
+                {
+                    ParametersSampleObject = JsonConvert.SerializeObject(ChangeUserNameSampleRequest.Instance)
+                },
+                new AiAgentToolAction("RateMovie",
+                    "Add movie rate required movie name and rate value between 0 to 5 (can be double, doesn't has to be integer)")
+                {
+                    ParametersSampleObject = JsonConvert.SerializeObject(RateToolSampleRequest.Instance)
+                },
+            }
+        };
+        userAgent2.Parameters.Add(new AiAgentParameter("userId", "the id of the current user that you talk with"));
+        var userAgent2Id = (await store.AI.CreateAgentAsync<MoviesSampleObject>(userAgent2, MoviesSampleObject.Instance)).Identifier;
+
+
+        var userAgent1 = new AiAgentConfiguration("user-info-agent-1",
+            config.ConnectionStringName,
+            "You are a User Profile Agent on movies rating system."
+        )
+        {
+            SubAgents =
+            [
+                new AiAgentToolSubAgent
+                {
+                    Identifier = userAgent2Id,
+                    Description = "Use for adding movie rate for the current user you talking with OR changing user name (cannot ask for both at once)"
+                }
+            ]
+        };
+        userAgent1.Parameters.Add(new AiAgentParameter("userId", "the id of the current user that you talk with"));
+        var userAgent1Id = (await store.AI.CreateAgentAsync<MoviesSampleObject>(userAgent1, MoviesSampleObject.Instance)).Identifier;
+
+        var chat = store.AI.Conversation(userAgent1Id, "chats/",
+            new AiConversationCreationOptions().AddParameter("userId", "Users/1"));
+        chat.Handle<ChangeUserNameSampleRequest>("user-info-agent-2/ChangeUserName", async (r) =>
+        {
+            var res = (await ChangeUserNameAsync(store, r)) as ActionToolResult;
+            // Console.WriteLine(res.Answer);
+            return res;
+        });
+        chat.Handle<RateToolSampleRequest>("user-info-agent-2/RateMovie", async (r) =>
+        {
+            var res = await RateMovieAsync(store, "Users/1", r) as ActionToolResult;
+            // Console.WriteLine(res.Answer);
+            return res;
+        });
+
+        chat.SetUserPrompt("Can you  rate the movie \"Toy Story\" as 5 and change my name from 'Shahar Hikri' to 'Aviv Rachmani'?");
+        var r = await chat.RunAsync<MoviesSampleObject>();
+        Assert.Equal(AiConversationResult.Done, r.Status);
+
+        using (var session = store.OpenAsyncSession())
+        {
+            var u = await session.LoadAsync<User>("Users/1");
+            Assert.Equal("Aviv Rachmani", u.Name);
+        }
+        Assert.Equal(Rates.Count + 1, (await store.Maintenance.SendAsync(new GetCollectionStatisticsOperation())).Collections["Ratings"]);
+
+        chat.SetUserPrompt("Can you rate the movie \"Toy Story\" as 4 and change my name from 'Aviv Rachmani' to 'Omer Adam'?");
+        r = await chat.RunAsync<MoviesSampleObject>();
+        Assert.Equal(AiConversationResult.Done, r.Status);
+
+        using (var session = store.OpenAsyncSession())
+        {
+            var u = await session.LoadAsync<User>("Users/1");
+            Assert.Equal("Omer Adam", u.Name);
+        }
+        Assert.Equal(Rates.Count + 2, (await store.Maintenance.SendAsync(new GetCollectionStatisticsOperation())).Collections["Ratings"]);
+    }
+
+    [RavenTheory(RavenTestCategory.Ai)]
+    [RavenGenAiData(IntegrationType = RavenAiIntegration.OpenAi, DatabaseMode = RavenDatabaseMode.Single)]
+    public async Task SubAgent2OpenActionTools2Agents(Options options, GenAiConfiguration config)
+    {
+        using var store = GetDocumentStore(options);
+        await store.Maintenance.SendAsync(new PutConnectionStringOperation<AiConnectionString>(config.Connection));
+        await CreateMoviesDatabase(store);
+
+        var userAgent2a = new AiAgentConfiguration("user-info-agent-2a",
+            config.ConnectionStringName,
+            "You are authorized to edit the user's name and to create movie-rating records associated with the user." +
+            "Use exclusively the 'ChangeUserName' tool for changing the user's name. " +
+            "Use exclusively the 'RateMovie' tool for adding a movie-rating record (rating a movie). " +
+            "Do not perform these actions in any other way."
+        )
+        {
+            Actions = new List<AiAgentToolAction>()
+            {
+                new AiAgentToolAction("ChangeUserName",
+                    "Updates the name of the current user interacting with the AI agent. have to send also the old name for validation.")
+                {
+                    ParametersSampleObject = JsonConvert.SerializeObject(ChangeUserNameSampleRequest.Instance)
+                },
+                new AiAgentToolAction("RateMovie",
+                    "Add movie rate required movie name and rate value between 0 to 5 (can be double, doesn't has to be integer)")
+                {
+                    ParametersSampleObject = JsonConvert.SerializeObject(RateToolSampleRequest.Instance)
+                },
+            }
+        };
+        userAgent2a.Parameters.Add(new AiAgentParameter("userId", "the id of the current user that you talk with"));
+        var userAgent2aId = (await store.AI.CreateAgentAsync<MoviesSampleObject>(userAgent2a, MoviesSampleObject.Instance)).Identifier;
+
+        var userAgent2b = new AiAgentConfiguration("user-info-agent-2b",
+            config.ConnectionStringName,
+            "You are authorized to add movies to user watched List." +
+            "Use exclusively the 'AddToMoviesWatchedList' tool for adding a movie to user's watched list. " +
+            "Do not perform these action in any other way."
+        )
+        {
+            Actions = new List<AiAgentToolAction>()
+            {
+                new AiAgentToolAction("AddToMovieWatchedList",
+                    "Use for adding a movie to user watched list.")
+                {
+                    ParametersSampleObject = JsonConvert.SerializeObject(AddMovieToWatchedListSampleRequest.Instance)
+                }
+            }
+        };
+        userAgent2b.Parameters.Add(new AiAgentParameter("userId", "the id of the current user that you talk with"));
+        var userAgent2bId = (await store.AI.CreateAgentAsync<MoviesSampleObject>(userAgent2b, MoviesSampleObject.Instance)).Identifier;
+
+        var userAgent1 = new AiAgentConfiguration("user-info-agent-1",
+            config.ConnectionStringName,
+            "You are a User Profile Agent on movies rating system."
+        )
+        {
+            SubAgents =
+            [
+                new AiAgentToolSubAgent
+                {
+                    Identifier = userAgent2aId,
+                    Description = "Use for adding movie rate for the current user you talking with OR changing user name (cannot ask for both at once)"
+                },
+                new AiAgentToolSubAgent
+                {
+                    Identifier = userAgent2bId,
+                    Description = "Use for adding a movie to user watched list (can add one movie per request). "
+                }
+            ]
+        };
+        userAgent1.Parameters.Add(new AiAgentParameter("userId", "the id of the current user that you talk with"));
+        var userAgent1Id = (await store.AI.CreateAgentAsync<MoviesSampleObject>(userAgent1, MoviesSampleObject.Instance)).Identifier;
+
+        var chat = store.AI.Conversation(userAgent1Id, "chats/",
+            new AiConversationCreationOptions().AddParameter("userId", "Users/1"));
+        chat.Handle<ChangeUserNameSampleRequest>("user-info-agent-2a/ChangeUserName", async (r) =>
+        {
+            var res = (await ChangeUserNameAsync(store, r)) as ActionToolResult;
+            // Console.WriteLine(res.Answer);
+            return res;
+        });
+        chat.Handle<RateToolSampleRequest>("user-info-agent-2a/RateMovie", async (r) =>
+        {
+            var res = await RateMovieAsync(store, "Users/1", r) as ActionToolResult;
+            // Console.WriteLine(res.Answer);
+            return res;
+        });
+        chat.Handle<AddMovieToWatchedListSampleRequest>("user-info-agent-2b/AddToMovieWatchedList", async (r) =>
+        {
+            var res = await AddMovieAsync(store, "Users/1", r) as ActionToolResult;
+            return res;
+        });
+
+        chat.SetUserPrompt("Please rate the movie \"Toy Story\" as 5, add the movie Nixon and Sudden Death to my watched list, change my name from 'Shahar Hikri' to 'Aviv Rachmani', and also please add Sudden Death to my watched list");
+        var r = await chat.RunAsync<MoviesSampleObject>();
+        Assert.Equal(AiConversationResult.Done, r.Status);
+
+        using (var session = store.OpenAsyncSession())
+        {
+            var u = await session.LoadAsync<User>("Users/1");
+            Assert.Equal("Aviv Rachmani", u.Name);
+            Assert.Equal(5, u.WatchedMovies.Count);
+        }
+        Assert.Equal(Rates.Count + 1, (await store.Maintenance.SendAsync(new GetCollectionStatisticsOperation())).Collections["Ratings"]);
+
+        chat.SetUserPrompt("Please rate the movie \"Toy Story\" as 4, add the movie Casino and Sudden Death to my watched list, change my name from 'Aviv Rachmani' to 'Omer Adam'");
+        r = await chat.RunAsync<MoviesSampleObject>();
+        Assert.Equal(AiConversationResult.Done, r.Status);
+
+        using (var session = store.OpenAsyncSession())
+        {
+            var u = await session.LoadAsync<User>("Users/1");
+            Assert.Equal("Omer Adam", u.Name);
+            Assert.Equal(6, u.WatchedMovies.Count);
+        }
+        Assert.Equal(Rates.Count + 2, (await store.Maintenance.SendAsync(new GetCollectionStatisticsOperation())).Collections["Ratings"]);
+    }
+
+    private static async Task<object> RateMovieAsync(IDocumentStore store, string userId, RateToolSampleRequest req)
+    {
+        if (req.RateValue < 0 || req.RateValue > 5)
+        {
+            return new ActionToolResult
+            {
+                IsSuccessful = false,
+                Answer = $"Cant rate \"{req.MovieName}\" with the rate value {req.RateValue} - rate value has to be between 0 to 5"
+            };
+        }
+
+        using (var session = store.OpenAsyncSession())
+        {
+            var movies = await session
+                .Advanced
+                .AsyncRawQuery<Movie>("from Movies where Title = $name")
+                .AddParameter("name", req.MovieName.ToLower())
+                .ToListAsync();
+
+            if (movies == null || movies.Count == 0)
+            {
+                return new ActionToolResult
+                {
+                    IsSuccessful = false,
+                    Answer = $"Movie with the name \"{req.MovieName}\" doesn't exist on the database"
+                };
+            }
+
+            var user = await session.LoadAsync<User>(userId);
+
+            foreach (var m in movies)
+            {
+                user.WatchedMovies.Add(m.Id);
+                await session.StoreAsync(new Rating()
+                {
+                    Id = "Ratings/",
+                    MovieId = m.Id,
+                    UserId = userId,
+                    RatingValue = req.RateValue,
+                    TimeStamp = DateTime.Now
+                });
+            }
+
+            await session.SaveChangesAsync();
+
+            return new ActionToolResult
+            {
+                IsSuccessful = true,
+                Answer =
+                    $"Found {movies.Count} movies with the name '{req.MovieName}' and rated them by score '{req.RateValue}'"
+            };
+        }
+    }
+
+    private static async Task<object> AddMovieAsync(IDocumentStore store, string userId, AddMovieToWatchedListSampleRequest req)
+    {
+        using (var session = store.OpenAsyncSession())
+        {
+            var movies = await session
+                .Advanced
+                .AsyncRawQuery<Movie>("from Movies where Title = $name")
+                .AddParameter("name", req.MovieName.ToLower())
+                .ToListAsync();
+
+            if (movies == null || movies.Count == 0)
+            {
+                return new ActionToolResult
+                {
+                    IsSuccessful = false,
+                    Answer = $"Movie with the name \"{req.MovieName}\" doesn't exist on the database"
+                };
+            }
+
+            var user = await session.LoadAsync<User>(userId);
+            var movieId = string.Empty;
+            foreach (var m in movies)
+            {
+                movieId = m.Id;
+                user.WatchedMovies.Add(m.Id);
+                break;
+            }
+
+            await session.SaveChangesAsync();
+
+            return new ActionToolResult
+            {
+                IsSuccessful = true,
+                Answer =
+                    $"The movie '{req.MovieName}'  (id: {movieId}) was added to user watched list"
+            };
+        }
+    }
+
+
+
+    [RavenTheory(RavenTestCategory.Ai)]
+    [RavenGenAiData(IntegrationType = RavenAiIntegration.OpenAi, DatabaseMode = RavenDatabaseMode.Single)]
+    public async Task ResumeChatAfterError(Options options, GenAiConfiguration config)
+    {
+        using var store = GetDocumentStore(options);
+        await store.Maintenance.SendAsync(new PutConnectionStringOperation<AiConnectionString>(config.Connection));
+        await CreateMoviesDatabase(store);
+
+        var userAgent = new AiAgentConfiguration("user-info-agent",
+            config.ConnectionStringName,
+            "You are a User Profile Agent on movies rating system. you can give the user information about user profile, such as: " +
+            "user name and watched list."
+        )
+        {
+            Queries = new List<AiAgentToolQuery>()
+            {
+                new AiAgentToolQuery
+                {
+                    Name = "GetUserProfile",
+                    Description = "Get the profile details of a specific user, including its 'WatchedMovies' list",
+                    Query = "from Users " +
+                            "where id() = $userId",
+                    ParametersSampleObject = "{}"
+                },
+            }
+        };
+        userAgent.Parameters.Add(new AiAgentParameter("userId", "the id of the current user that you talk with"));
+
+        var recommendationAgent = new AiAgentConfiguration("recommendation-agent",
+            config.ConnectionStringName,
+            "You are a User Movie Insights Agent in a movie recommendation system. " +
+            "You can retrieve details such as:" + Environment.NewLine +
+            "- The list of movies the user has watched, ordered by their ratings (highest to lowest)." + Environment.NewLine +
+            "- The user’s top 3 genre affinities, ranked by score." + Environment.NewLine +
+            "Always return results in a concise, structured way that can be used directly by the recommendation engine."
+        )
+        {
+            Queries = new List<AiAgentToolQuery>()
+            {
+                // watched list ordered by user rates
+                new AiAgentToolQuery
+                {
+                    Name = "GetUserWatchedMoviesRates",
+                    Description =
+                        "Get user watched list movies ordered by the user rate - descending",
+                    Query = "from Ratings as r " +
+                            "where r.UserId = $userId " +
+                            "order by r.RatingValue desc " +
+                            "select { MovieId: r.MovieId, Title: load(r.MovieId).Title, Rating: r.RatingValue}",
+                    ParametersSampleObject = "{}"
+                },
+
+                // top 3 genres for the user
+                new AiAgentToolQuery
+                {
+                    Name = "GetUserAffinitiesByGenres",
+                    Description =
+                        "Get user genre affinities sorted by score, ordered by average Score (rating) - descending",
+                    Query = "from index 'UserGenreAffinity' " +
+                            "where UserId = $userId " +
+                            "order by Score desc " +
+                            "select Genre, Score, Count " +
+                            "limit 0, 3",
+                    ParametersSampleObject = "{}"
+                }
+            }
+        };
+        recommendationAgent.Parameters.Add(new AiAgentParameter("userId", "the id of the current user that you talk with"));
+
+        var userAgentId = (await store.AI.CreateAgentAsync(userAgent, MoviesSampleObject.Instance)).Identifier;
+        var recommendationAgentId = (await store.AI.CreateAgentAsync(recommendationAgent, MoviesSampleObject.Instance)).Identifier;
+
+        var agent = new AiAgentConfiguration("movies-agent",
+            config.ConnectionStringName,
+            "You are a User Profile Agent in a movie recommendation and rating system. " +
+            "Your purpose is to provide accurate, structured information about a specific user. " +
+            "You can retrieve details such as: " + Environment.NewLine + "- The user’s profile (including watched movies). " + Environment.NewLine +
+            "- The list of movies the user has rated, ordered by rating. " + Environment.NewLine +
+            "- The user’s genre affinities, sorted by preference scores. " + Environment.NewLine +
+            "Always return results in a clear, concise, and structured way that can be used directly by the movie recommendation system"
+        )
+        {
+            SubAgents =
+            [
+                new AiAgentToolSubAgent
+                {
+                    Identifier = userAgentId,
+                    Description = "Use to ask: " + Environment.NewLine +
+                                  "- The list of movies the user has rated, ordered by rating. " + Environment.NewLine +
+                                  "- The user’s genre affinities, sorted by preference scores. "
+                },
+                new AiAgentToolSubAgent
+                {
+                    Identifier = recommendationAgentId,
+                    Description = "Use to ask about user profile, such as: user name and watched list."
+                }
+            ]
+        };
+        agent.Parameters.Add(new AiAgentParameter("currentUserId", "the id of the current user that you talk with"));
+        var identifier = (await store.AI.CreateAgentAsync<MoviesSampleObject>(agent, MoviesSampleObject.Instance)).Identifier;
+
+        var db = await GetDatabase(store.Database);
+        bool throwEx = false;
+        db.ForTestingPurposesOnly().BeforeAiAgentTalk = document =>
+        {
+            if (document.Agent == "user-info-agent" && throwEx)
+            {
+                // throw on sub-agent
+                throw new RefusedToAnswerException("test")
+                {
+                    RequestId = "test123"
+                };
+            }
+
+        };
+
+        // chat without error
+        var chat = store.AI.Conversation(identifier, "chats/1",
+            new AiConversationCreationOptions().AddParameter("currentUserId", "Users/1"));
+        chat.SetUserPrompt("Whats my top 5 movies?");
+        var r = await chat.RunAsync<MoviesSampleObject>();
+        Assert.Equal(AiConversationResult.Done, r.Status);
+
+        // error
+        throwEx = true;
+        chat.SetUserPrompt("Whats my name and my favorite genres?");
+        var e = await Assert.ThrowsAsync<RavenException>(() => chat.RunAsync<MoviesSampleObject>());
+        Assert.Contains("Failed to 'talk' with the agent 'movies-agent'", e.Message);
+        Assert.True(e.Message.Contains("Failed to 'talk' with the agent 'user-info-agent'") ||
+                    e.Message.Contains("Failed to 'talk' with the agent 'recommendation-agent'"));
+
+        // Resume execution after an error
+        throwEx = false;
+        chat.SetUserPrompt("Whats my name and my favorite genres?");
+        r = await chat.RunAsync<MoviesSampleObject>();
         Assert.Equal(AiConversationResult.Done, r.Status);
     }
 
@@ -585,6 +1024,28 @@ public class RavenDB_24887_2(ITestOutputHelper output) : RavenTestBase(output)
 
         public List<string> MoviesIds { get; set; }
         public List<string> MoviesNames { get; set; }
+    }
+
+    public class RateToolSampleRequest
+    {
+        public static RateToolSampleRequest Instance = new()
+        {
+            MovieName = "The name of the movie the user wants to rate",
+            RateValue = 4.5
+        };
+
+        public string MovieName { get; set; }
+        public double RateValue { get; set; }
+    }
+
+    public class AddMovieToWatchedListSampleRequest
+    {
+        public static AddMovieToWatchedListSampleRequest Instance = new()
+        {
+            MovieName = "The name of the movie the user wants to add to its watched list",
+        };
+
+        public string MovieName { get; set; }
     }
 
     public class ActionToolResult
@@ -714,30 +1175,30 @@ public class RavenDB_24887_2(ITestOutputHelper output) : RavenTestBase(output)
         public UserGenreAffinity()
         {
             Map = ratings => from r in ratings
-                let m = LoadDocument<Movie>(r.MovieId)
-                from gnr in (m.Genres ?? Array.Empty<string>())
-                select new
-                {
-                    r.UserId,
-                    Genre = gnr,
-                    Count = 1,
-                    Sum = (double)r.RatingValue,
-                    Score = (double)r.RatingValue
-                };
+                             let m = LoadDocument<Movie>(r.MovieId)
+                             from gnr in (m.Genres ?? Array.Empty<string>())
+                             select new
+                             {
+                                 r.UserId,
+                                 Genre = gnr,
+                                 Count = 1,
+                                 Sum = (double)r.RatingValue,
+                                 Score = (double)r.RatingValue
+                             };
 
             Reduce = results => from r in results
-                group r by new { r.UserId, r.Genre }
+                                group r by new { r.UserId, r.Genre }
                 into g
-                let totalCount = g.Sum(x => x.Count)
-                let totalSum = g.Sum(x => x.Sum)
-                select new
-                {
-                    UserId = g.Key.UserId,
-                    Genre = g.Key.Genre,
-                    Count = totalCount,
-                    Sum = totalSum,
-                    Score = totalSum / totalCount
-                };
+                                let totalCount = g.Sum(x => x.Count)
+                                let totalSum = g.Sum(x => x.Sum)
+                                select new
+                                {
+                                    UserId = g.Key.UserId,
+                                    Genre = g.Key.Genre,
+                                    Count = totalCount,
+                                    Sum = totalSum,
+                                    Score = totalSum / totalCount
+                                };
 
             Index(x => x.UserId, FieldIndexing.Exact);
             Index(x => x.Genre, FieldIndexing.Search);
