@@ -604,7 +604,7 @@ public class RavenDB_24887_2(ITestOutputHelper output) : RavenTestBase(output)
             return res;
         });
 
-        chat.SetUserPrompt("Can you  rate the movie \"Toy Story\" as 5 and change my name from 'Shahar Hikri' to 'Aviv Rachmani'?");
+        chat.SetUserPrompt("Can you rate the movie \"Toy Story\" as 5 and change my name from 'Shahar Hikri' to 'Aviv Rachmani'?");
         var r = await chat.RunAsync<MoviesSampleObject>();
         Assert.Equal(AiConversationResult.Done, r.Status);
 
@@ -745,6 +745,99 @@ public class RavenDB_24887_2(ITestOutputHelper output) : RavenTestBase(output)
         }
         Assert.Equal(Rates.Count + 2, (await store.Maintenance.SendAsync(new GetCollectionStatisticsOperation())).Collections["Ratings"]);
     }
+
+    [RavenTheory(RavenTestCategory.Ai)]
+    [RavenGenAiData(IntegrationType = RavenAiIntegration.OpenAi, DatabaseMode = RavenDatabaseMode.Single)]
+    public async Task SubAgentWitAnotherActionCallOnTheFirstActionCallResponse(Options options, GenAiConfiguration config)
+    {
+        using var store = GetDocumentStore(options);
+        await store.Maintenance.SendAsync(new PutConnectionStringOperation<AiConnectionString>(config.Connection));
+        await CreateMoviesDatabase(store);
+
+        var userAgent2a = new AiAgentConfiguration("user-info-agent-2a",
+            config.ConnectionStringName,
+            "You are authorized to edit the user's name and to create movie-rating records associated with the user." +
+            "Use exclusively the 'ChangeUserName' tool for changing the user's name. " +
+            "Do not perform these actions in any other way."
+        )
+        {
+            Actions = new List<AiAgentToolAction>()
+            {
+                // new AiAgentToolAction("ChangeUserName",
+                //     "Changes the user's name. You must always provide both the old name and the new name for validation. " +
+                //     "If the user requests multiple consecutive name changes in a single message, DO NOT answer the user between them. " +
+                //     "Instead, execute this tool once for the first change, wait for its tool response, and only then execute this tool again for the next change. " +
+                //     "Never merge multiple name changes into one call, and never reply to the user until ALL name-change operations have completed successfully.")
+                // {
+                //     ParametersSampleObject = JsonConvert.SerializeObject(ChangeUserNameSampleRequest.Instance)
+                // }
+                new AiAgentToolAction("ChangeUserName",
+                    "Changes the user's name. Always provide both OldUserName and NewUserName. " +
+                    "This tool MUST be called strictly one time per assistant message. " +
+                    "Never send more than ONE tool call in a single assistant response. " +
+                    "If the user requests multiple name changes in one message, you must execute them SEQUENTIALLY: " +
+                    "1) Send EXACTLY ONE ChangeUserName tool call for the first change. " +
+                    "2) Wait for the tool's response. " +
+                    "3) Only after receiving that response, send EXACTLY ONE ChangeUserName tool call for the second change. " +
+                    "4) Do NOT answer the user until ALL required tool calls are completed. " +
+                    "If you attempt to handle multiple changes, you must break them into multiple assistant messages, each containing exactly one tool call. " +
+                    "Never combine multiple ChangeUserName operations into a single tool_calls array.")
+                {
+                    ParametersSampleObject = JsonConvert.SerializeObject(ChangeUserNameSampleRequest.Instance)
+                }
+            }
+        };
+        userAgent2a.Parameters.Add(new AiAgentParameter("userId", "the id of the current user that you talk with"));
+        var userAgent2aId = (await store.AI.CreateAgentAsync<MoviesSampleObject>(userAgent2a, MoviesSampleObject.Instance)).Identifier;
+
+        var userAgent1 = new AiAgentConfiguration("user-info-agent-1",
+            config.ConnectionStringName,
+            "You are a routing agent. Your only job is to forward the user's message EXACTLY as written (verbatim, without any modification, summary, interpretation, or additional wording) to the sub-agent 'user-info-agent-2a' using its tool call.\n" +
+            "Do NOT answer the user directly.\n" +
+            "Do NOT process, interpret, rewrite, or summarize the user's message.\n" +
+            "Do NOT add explanations, comments, or reasoning.\n\n" +
+            "Always trigger exactly ONE tool call — the sub-agent — and pass the user's message as-is in the parameter 'subAgentUserPrompt'.\n\n" +
+            "If the user writes:\n" +
+            "\"hello, I want to change my name and also rate a movie\"\n\n" +
+            "You MUST send exactly:\n" +
+            "\"hello, I want to change my name and also rate a movie\"\n\n" +
+            "Your ONLY task: forward the raw user message to the sub-agent tool and return its response to the user."
+        )
+        {
+            SubAgents =
+            [
+                new AiAgentToolSubAgent
+                {
+                    Identifier = userAgent2aId,
+                    Description = "Handle the user's request exactly as it is received. " +
+                                  "The parent agent forwards the user's raw prompt verbatim. " +
+                                  "Treat the incoming 'subAgentUserPrompt' as if it was written directly by the user. " +
+                                  "Do not expect structured parameters unless the user explicitly provided them. " +
+                                  "Fully process the user's request and return the appropriate response."
+                }
+            ]
+        };
+        userAgent1.Parameters.Add(new AiAgentParameter("userId", "the id of the current user that you talk with"));
+        var userAgent1Id = (await store.AI.CreateAgentAsync<MoviesSampleObject>(userAgent1, MoviesSampleObject.Instance)).Identifier;
+
+        var chat = store.AI.Conversation(userAgent1Id, "chats/",
+            new AiConversationCreationOptions().AddParameter("userId", "Users/1"));
+        chat.Handle<ChangeUserNameSampleRequest>("user-info-agent-2a/ChangeUserName", async (r) =>
+        {
+            var res = (await ChangeUserNameAsync(store, r)) as ActionToolResult;
+            // Console.WriteLine(res.Answer);
+            return res;
+        });
+
+        var msg = "change my name from Shahar Hikri to Aviv Rahmani, and then change my name to Aviv Rahmani to Omer Adam";
+        // var msg = "change my name from Shahar Hikri to Aviv Rahmani";
+        chat.SetUserPrompt(msg);
+        var r = await chat.RunAsync<MoviesSampleObject>();
+        Assert.Equal(AiConversationResult.Done, r.Status);
+
+        WaitForUserToContinueTheTest(store, false);
+    }
+
 
     private static async Task<object> RateMovieAsync(IDocumentStore store, string userId, RateToolSampleRequest req)
     {
