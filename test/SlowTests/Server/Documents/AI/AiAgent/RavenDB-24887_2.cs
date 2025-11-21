@@ -834,8 +834,6 @@ public class RavenDB_24887_2(ITestOutputHelper output) : RavenTestBase(output)
         chat.SetUserPrompt(msg);
         var r = await chat.RunAsync<MoviesSampleObject>();
         Assert.Equal(AiConversationResult.Done, r.Status);
-
-        WaitForUserToContinueTheTest(store, false);
     }
 
 

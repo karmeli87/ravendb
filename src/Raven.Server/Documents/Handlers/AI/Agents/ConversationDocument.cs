@@ -24,7 +24,6 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
     public List<BlittableJsonReaderObject> Messages = [];
     public List<string> LinkedConversations = [];
     public Dictionary<string, AiAgentActionRequest> OpenActionCalls = [];
-    public List<AiSubAgentInstance> SubAgents = [];
     public AiUsage TotalUsage = new AiUsage();
     public AiUsage CurrentUsage = new AiUsage();
     public string ChangeVector;
@@ -203,7 +202,6 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
             [nameof(Parameters)] = Parameters,
             [nameof(Messages)] = Messages,
             [nameof(LinkedConversations)] = LinkedConversations,
-            [nameof(SubAgents)] = new DynamicJsonArray(SubAgents.Select(x => x.ToJson())),
             [nameof(TotalUsage)] = TotalUsage.ToJson(),
             [nameof(OpenActionCalls)] = DynamicJsonValue.Convert(OpenActionCalls),
             [nameof(LastMessageAt)] = LastMessageAt,
@@ -274,11 +272,6 @@ public class ConversationDocument([NotNull] string agent, BlittableJsonReaderObj
         if (document.TryGet(nameof(CurrentUsage), out BlittableJsonReaderObject currentUsageBlittable))
         {
             conversation.CurrentUsage = JsonDeserializationClient.AiUsage(currentUsageBlittable);
-        }
-
-        if (document.TryGet(nameof(SubAgents), out BlittableJsonReaderArray subAgentsIdsObj))
-        {
-            conversation.SubAgents = subAgentsIdsObj.Select(x => JsonDeserializationServer.SubAgentInstance((BlittableJsonReaderObject)x)).ToList();
         }
 
         return conversation;
