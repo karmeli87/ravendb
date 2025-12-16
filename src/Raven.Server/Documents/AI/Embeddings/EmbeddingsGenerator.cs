@@ -21,6 +21,7 @@ using Raven.Server.Background;
 using Raven.Server.Config;
 using Raven.Server.Documents.ETL.Providers.AI;
 using Raven.Server.Documents.ETL.Providers.AI.Embeddings;
+using Raven.Server.Documents.ETL.Providers.AI.GenAi;
 using Raven.Server.Documents.TransactionMerger.Commands;
 using Raven.Server.ServerWide.Context;
 using Raven.Server.Utils;
@@ -50,7 +51,7 @@ public class EmbeddingsGenerator(DocumentDatabase database, RavenLogger logger, 
         Etl,
     }
 
-    private interface IEmbeddingsCommand;
+    public interface IEmbeddingsCommand;
 
     private record RefreshCache(List<string> DocumentIds, TimeSpan CacheDuration) : IEmbeddingsCommand;
     
@@ -585,7 +586,7 @@ public class EmbeddingsGenerator(DocumentDatabase database, RavenLogger logger, 
         return results;
     }
 
-    private sealed class PutEmbeddingsIntoCacheCommand(List<IEmbeddingsCommand> batch)
+    public sealed class PutEmbeddingsIntoCacheCommand(List<IEmbeddingsCommand> batch)
         : MergedTransactionCommand<DocumentsOperationContext, DocumentsTransaction>
     {
         protected override long ExecuteCmd(DocumentsOperationContext context)
@@ -645,6 +646,11 @@ public class EmbeddingsGenerator(DocumentDatabase database, RavenLogger logger, 
                         }
                         break;
                     }
+
+                    case GenAiTask.GenAiCacheItem genAiItem:
+                        var genAiCacheId = EmbeddingsHelper.GetEmbeddingCacheDocumentId(new AiConnectionStringIdentifier(genAiItem.ConfigurationId), genAiItem.Hash, VectorEmbeddingType.Single);
+                        documentsStorage.Put(context, genAiCacheId, null, genAiItem.Value);
+                        break;
                     case null:
                         throw new ArgumentNullException();
                     default:

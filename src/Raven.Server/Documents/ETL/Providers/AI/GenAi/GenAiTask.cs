@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Raven.Client;
 using Raven.Client.Documents.AI;
 using Raven.Client.Documents.Attachments;
+using Raven.Client.Documents.Indexes.Vector;
 using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Operations.AI;
 using Raven.Client.Documents.Operations.AI.Agents;
@@ -13,6 +15,7 @@ using Raven.Client.Documents.Operations.ETL;
 using Raven.Client.Exceptions;
 using Raven.Client.Extensions;
 using Raven.Server.Documents.AI;
+using Raven.Server.Documents.AI.Embeddings;
 using Raven.Server.Documents.ETL.Metrics;
 using Raven.Server.Documents.ETL.Providers.AI.Enumerators;
 using Raven.Server.Documents.ETL.Providers.AI.GenAi.Stats;
@@ -30,6 +33,7 @@ using Raven.Server.Utils;
 using Sparrow.Json;
 using Sparrow.Json.Parsing;
 using Sparrow.Server.Json.Sync;
+using static Raven.Server.Documents.AI.Embeddings.EmbeddingsGenerator;
 using PatchRequest = Raven.Server.Documents.Patch.PatchRequest;
 
 #pragma warning disable SKEXP0001
@@ -170,12 +174,12 @@ public sealed class GenAiTask : EtlProcess<GenAiItem, GenAiScriptResult, GenAiCo
         return results.Count;
     }
 
+    public record GenAiCacheItem(string ConfigurationId, string Hash, BlittableJsonReaderObject Value) : IEmbeddingsCommand;
+
     private List<Exception> SendToModel(List<GenAiResultItem> items, DocumentsOperationContext context, GenAiStatsScope scope)
     {
         using (var statsScope = scope.For(GenAiOperations.LoadToModel))
         {
-            context.CloseTransaction();
-
             List<Task<GenAiHandlerResult>> tasks = [];
             Task[] executingTasks = new Task[Math.Max(1, _maxConcurrency)];
             Array.Fill(executingTasks, Task.CompletedTask);
@@ -194,44 +198,30 @@ public sealed class GenAiTask : EtlProcess<GenAiItem, GenAiScriptResult, GenAiCo
                 // this is how we ensure that we don't have too many outstanding tasks 
                 var idx = Task.WaitAny(executingTasks, CancellationToken);
                 statsScope.TotalSentToModel++;
-
-                string json = item.ContextOutput.Context.ToString();
                 Task<GenAiHandlerResult> task;
 
-                var agentConfiguration = CreateAgentConfiguration(context, item);
-                var handler = new GenAiConversationHandler(Database.ServerStore, Database, Configuration)
+                var docId = EmbeddingsHelper.GetEmbeddingCacheDocumentId(new AiConnectionStringIdentifier(Configuration.Identifier), item.ContextOutput.AiHash, VectorEmbeddingType.Single);
+                var doc = Database.DocumentsStorage.Get(context, docId, DocumentFields.Default);
+                if (doc != null)
                 {
-                    // GenAI task uses full access
-                    Authentication = Database.ServerStore.Server.AuthenticateConnectionCertificate(Database.ServerStore.Server.Certificate.ClientCertificate, $"GenAI access for '{Name}'")
-                };
-
-                handler.Initialize(agentConfiguration, $"{Configuration.Identifier}/{item.DocumentId}/", new RequestBody
-                {
-                    Parameters = item.ContextOutput.Context,
-                    CreationOptions = new AiConversationCreationOptions
+                    // already cached
+                    task = Task.FromResult(new GenAiHandlerResult
                     {
-                        ExpirationInSec = Configuration.ExpirationInSec
-                    },
-                    UserPrompt = json,
-                    Attachments = item.ContextOutput.Attachments
-                }, changeVector: null);
-
-                handler.SetClient(_chatCompletionClient);
-                try
-                {
-                    task = handler.HandleRequest(CancellationToken);
+                        Response = doc.Data.ToString(),
+                        Usage = new AiUsage() // no usage when from cache
+                    });
                 }
-                catch (Exception e)
+                else
                 {
-                    // if we failed to _start_, we want to handle it in the same manner
-                    // and deal with the error in ProcessModelResults
-                    task = Task.FromException<GenAiHandlerResult>(e);
+                    task = CreateTaskForItem(context, item);
                 }
 
                 itemsSentToModel.Add(item);
                 tasks.Add(task);
                 executingTasks[idx] = task;
             }
+            
+            context.CloseTransaction();
 
             try
             {
@@ -247,7 +237,42 @@ public sealed class GenAiTask : EtlProcess<GenAiItem, GenAiScriptResult, GenAiCo
         }
     }
 
-    private AiAgentConfiguration CreateAgentConfiguration(DocumentsOperationContext context, GenAiResultItem item)
+    private Task<GenAiHandlerResult> CreateTaskForItem(DocumentsOperationContext context, GenAiResultItem item)
+    {
+        string json = item.ContextOutput.Context.ToString();
+
+        var agentConfiguration = CreateAgentConfiguration(context, item);
+        var handler = new GenAiConversationHandler(Database.ServerStore, Database, Configuration)
+        {
+            // GenAI task uses full access
+            Authentication = Database.ServerStore.Server.AuthenticateConnectionCertificate(Database.ServerStore.Server.Certificate.ClientCertificate, $"GenAI access for '{Name}'")
+        };
+
+        handler.Initialize(agentConfiguration, $"{Configuration.Identifier}/{item.DocumentId}/", new RequestBody
+        {
+            Parameters = item.ContextOutput.Context,
+            CreationOptions = new AiConversationCreationOptions
+            {
+                ExpirationInSec = Configuration.ExpirationInSec
+            },
+            UserPrompt = json,
+            Attachments = item.ContextOutput.Attachments
+        }, changeVector: null);
+
+        handler.SetClient(_chatCompletionClient);
+        try
+        {
+            return handler.HandleRequest(CancellationToken);
+        }
+        catch (Exception e)
+        {
+            // if we failed to _start_, we want to handle it in the same manner
+            // and deal with the error in ProcessModelResults
+            return Task.FromException<GenAiHandlerResult>(e);
+        }
+    }
+
+    private AiAgentConfiguration CreateAgentConfiguration(JsonOperationContext context, GenAiResultItem item)
     {
         var agentParameters = new List<AiAgentParameter>();
         var contextObjPropNames = item.ContextOutput.Context.GetPropertyNames();
@@ -272,6 +297,7 @@ public sealed class GenAiTask : EtlProcess<GenAiItem, GenAiScriptResult, GenAiCo
     private List<Exception> ProcessModelResults(List<GenAiResultItem> items, DocumentsOperationContext context, List<Task<GenAiHandlerResult>> tasks, GenAiStatsScope statsScope)
     {
         List<Exception> exceptions = null;
+        List<IEmbeddingsCommand> cache = [];
 
         for (int index = 0; index < tasks.Count; index++)
         {
@@ -308,6 +334,17 @@ public sealed class GenAiTask : EtlProcess<GenAiItem, GenAiScriptResult, GenAiCo
                 item.ModelOutput.Usage = result.Usage;
                 item.ModelOutput.ConversationDocument = context.Sync.ReadForMemory(result.ConversationDocument, item.DocumentId);
             }
+            else
+            {
+                cache.Add(new GenAiCacheItem(Configuration.Identifier, item.ContextOutput.AiHash, item.ModelOutput.Output));
+            }
+        }
+
+        if (cache.Count > 0)
+        {
+            Debug.Assert(Configuration.TestMode == false, "Configuration.TestMode == false");
+            var insertCacheCommand = new PutEmbeddingsIntoCacheCommand(cache);
+            Database.TxMerger.EnqueueSync(insertCacheCommand);
         }
 
         return exceptions;
