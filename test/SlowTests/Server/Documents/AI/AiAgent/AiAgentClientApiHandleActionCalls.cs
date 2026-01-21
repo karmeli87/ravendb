@@ -172,6 +172,40 @@ public class AiAgentClientApiHandleActionCalls : RavenTestBase
         await Assert.ThrowsAsync<ConcurrencyException>(() => chat2.RunAsync<Sample>());
     }
 
+    [RavenTheory(RavenTestCategory.Ai)]
+    [RavenGenAiData(IntegrationType = RavenAiIntegration.OpenAi, DatabaseMode = RavenDatabaseMode.Single)]
+    public async Task HandleWithTaskReturningStringResolvesToCorrectOverload(Options options, GenAiConfiguration config)
+    {
+        using var store = GetDocumentStore(options);
+
+        await store.Maintenance.SendAsync(new PutConnectionStringOperation<AiConnectionString>(config.Connection));
+
+        var agent = BuildAgent(config.ConnectionStringName);
+        var r  = await store.AI.CreateAgentAsync(agent, new Sample
+        {
+            Answer = "the answer"
+        });
+        var chat = store.AI.Conversation(
+            r.Identifier,
+            "chats/123",
+            new AiConversationCreationOptions().AddParameter("company", "companies/90-A"));
+
+        var recentOrderCalled = false;
+        // This should resolve to Handle<TArgs, TResult>(Func<TArgs, Task<TResult>>)
+        // not Handle<TArgs>(Func<TArgs, object>)
+        chat.Handle(RecentOrder, (object query) =>
+        {
+            recentOrderCalled = true;
+            return Task.FromResult("done");
+        });
+
+        chat.SetUserPrompt("fetch my recent orders");
+        var run = await chat.RunAsync<Sample>();
+        Assert.Equal(run.Status, AiConversationResult.Done);
+        Assert.NotNull(run.Answer.Answer);
+        Assert.True(recentOrderCalled);
+    }
+
     internal static AiAgentConfiguration BuildAgent(string connection)
     {
         var agent = new AiAgentConfiguration("shopping assistant", connection,
