@@ -172,6 +172,76 @@ public class AiAgentClientApiHandleActionCalls : RavenTestBase
         await Assert.ThrowsAsync<ConcurrencyException>(() => chat2.RunAsync<Sample>());
     }
 
+    [RavenTheory(RavenTestCategory.Ai)]
+    [RavenGenAiData(IntegrationType = RavenAiIntegration.OpenAi, DatabaseMode = RavenDatabaseMode.Single)]
+    public async Task CanHandleToolCallWithAsyncTaskObjectReturn(Options options, GenAiConfiguration config)
+    {
+        using var store = GetDocumentStore(options);
+
+        await store.Maintenance.SendAsync(new PutConnectionStringOperation<AiConnectionString>(config.Connection));
+
+        var agent = BuildAgent(config.ConnectionStringName);
+        var r  = await store.AI.CreateAgentAsync(agent, new Sample
+        {
+            Answer = "the answer"
+        });
+        var chat = store.AI.Conversation(
+            r.Identifier,
+            "chats/123",
+            new AiConversationCreationOptions().AddParameter("company", "companies/90-A"));
+
+        var recentOrderCalled = false;
+        // Test the Handle overload that accepts Func<TArgs, Task<object>>
+        chat.Handle(RecentOrder, async (object query) =>
+        {
+            recentOrderCalled = true;
+            await Task.Delay(1); // Simulate async work
+            return (object)"done";
+        });
+
+        chat.SetUserPrompt("fetch my recent orders");
+        var run = await chat.RunAsync<Sample>();
+        Assert.Equal(run.Status, AiConversationResult.Done);
+        Assert.NotNull(run.Answer.Answer);
+        Assert.True(recentOrderCalled);
+    }
+
+    [RavenTheory(RavenTestCategory.Ai)]
+    [RavenGenAiData(IntegrationType = RavenAiIntegration.OpenAi, DatabaseMode = RavenDatabaseMode.Single)]
+    public async Task CanHandleToolCallWithTypedArgsAndAsyncTaskObjectReturn(Options options, GenAiConfiguration config)
+    {
+        using var store = GetDocumentStore(options);
+
+        await store.Maintenance.SendAsync(new PutConnectionStringOperation<AiConnectionString>(config.Connection));
+
+        var agent = BuildAgent(config.ConnectionStringName);
+
+        var r  = await store.AI.CreateAgentAsync(agent, new
+        {
+            Answer = "the answer"
+        });
+
+        var chat = store.AI.Conversation(
+            r.Identifier,
+            "chats/123",
+            new AiConversationCreationOptions().AddParameter("company", "companies/90-A"));
+
+        string query = null;
+        // Test the Handle overload that accepts Func<TArgs, Task<object>> with typed args
+        chat.Handle(ProductSearch, async (ProductSearchArgs args) =>
+        {
+            query = args.Query[0];
+            await Task.Delay(1); // Simulate async work
+            return (object)"not found";
+        });
+
+        chat.SetUserPrompt("find me sugar");
+        var run = await chat.RunAsync<Sample>();
+        Assert.Equal(run.Status, AiConversationResult.Done);
+        Assert.NotNull(run.Answer.Answer);
+        Assert.Equal("sugar", query);
+    }
+
     internal static AiAgentConfiguration BuildAgent(string connection)
     {
         var agent = new AiAgentConfiguration("shopping assistant", connection,

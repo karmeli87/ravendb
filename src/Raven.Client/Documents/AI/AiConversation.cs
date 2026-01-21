@@ -142,12 +142,12 @@ internal class AiConversation : IAiConversationOperations
 
     public void Handle<TArgs>(string actionName, Func<TArgs, Task<object>> action, AiHandleErrorStrategy aiHandleError) where TArgs : class
     {
-        Handle<TArgs>(actionName, (_, token) => action(token), aiHandleError);
+        Handle<TArgs>(actionName, (_, args) => action(args), aiHandleError);
     }
 
     public void Handle<TArgs>(string actionName, Func<TArgs, object> action, AiHandleErrorStrategy aiHandleError) where TArgs : class
     {
-        Handle<TArgs>(actionName, (_, token) => action(token), aiHandleError);
+        Handle<TArgs>(actionName, (_, args) => action(args), aiHandleError);
     }
 
     public void Handle<TArgs>(string actionName, Func<AiAgentActionRequest, TArgs, Task<object>> action, AiHandleErrorStrategy aiHandleError)
