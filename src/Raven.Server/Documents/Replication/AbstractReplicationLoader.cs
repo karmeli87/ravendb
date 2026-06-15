@@ -167,6 +167,7 @@ namespace Raven.Server.Documents.Replication
                 using (var writer = new BlittableJsonTextWriter(context, tcpConnectionOptions.Stream))
                 {
                     DynamicJsonValue response = GetInitialRequestMessage(getLatestEtagMessage, replParams);
+
                     context.Write(writer, response);
                     writer.Flush();
                 }
@@ -293,7 +294,7 @@ namespace Raven.Server.Documents.Replication
         protected virtual DynamicJsonValue GetInitialRequestMessage(ReplicationLatestEtagRequest replicationLatestEtagRequest,
             ReplicationLoader.PullReplicationParams replParams = null)
         {
-            return new DynamicJsonValue
+            var response = new DynamicJsonValue
             {
                 [nameof(ReplicationMessageReply.Type)] = nameof(ReplicationMessageReply.ReplyType.Ok),
                 [nameof(ReplicationMessageReply.MessageType)] = ReplicationMessageType.Heartbeat,
@@ -301,6 +302,11 @@ namespace Raven.Server.Documents.Replication
                 [nameof(ReplicationMessageReply.AcceptablePaths)] = replParams?.AllowedPaths,
                 [nameof(ReplicationMessageReply.PreventDeletionsMode)] = replParams?.PreventDeletionsMode,
             };
+
+            if (replParams != null && replParams.Mode == PullReplicationMode.HubToSink)
+                response[nameof(ReplicationMessageReply.LastConfirmedChangeVector)] = ReplicationUtils.ReadCursorFromClusterFor(Server, _databaseName, replParams.TaskId, ExternalReplicationState.ReplicationStateType.HubCursor);
+
+            return response;
         }
 
         public ClusterTopology GetClusterTopology()
