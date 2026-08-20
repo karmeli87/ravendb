@@ -12,7 +12,7 @@ using Raven.Quill.Hosting;
 namespace QuillTests.E2E.Fixtures;
 
 /// Hosts the appliance Program for tests: seeds a known operator API key, swaps in the test's in-process
-/// IDocumentStore, and flips IServerReady ready. Every CreateClient() carries the TestApiKey by default;
+/// IDocumentStore, and flips the bootstrap phase to Ready. Every CreateClient() carries the TestApiKey by default;
 /// unauthenticated-path tests remove it.
 public sealed class ApplianceWebApplicationFactory : WebApplicationFactory<Program>
 {
@@ -104,14 +104,11 @@ public sealed class ApplianceWebApplicationFactory : WebApplicationFactory<Progr
 
         var host = base.CreateHost(builder);
 
-        // Both are absent in the activating phase, where there is nothing to be ready for. In the serving
-        // phase the appliance reaches these through RavenReadinessService, which tests drop, so stand in
-        // for it: an activated test host behaves like one whose probe has already succeeded.
+        // In the serving phase the appliance reaches Ready through RavenReadinessService, which tests
+        // drop, so stand in for it: an activated test host behaves like one whose probe has succeeded.
+        // Absent in the activating phase, where there is nothing to be ready for.
         if (_activated)
-        {
-            host.Services.GetService<IServerReady>()?.MarkReady();
             host.Services.GetService<IBootstrapState>()?.MarkReady();
-        }
 
         return host;
     }

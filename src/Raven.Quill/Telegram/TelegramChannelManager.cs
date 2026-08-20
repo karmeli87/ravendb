@@ -27,7 +27,7 @@ internal sealed class TelegramChannelManager(
     ITelegramBotClientFactory botFactory,
     IAgentRouter router,
     IOptions<ApplianceOptions> options,
-    IServerReady ready,
+    IBootstrapState bootstrap,
     ILogger<TelegramChannelManager> logger) : BackgroundService, ITelegramChannelManager
 {
     private readonly ConcurrentDictionary<(string Database, string ChannelId), TelegramBotRuntime> _bots = new();
@@ -43,7 +43,7 @@ internal sealed class TelegramChannelManager(
         using var wake = new AsyncManualResetEvent(stoppingToken);
         _wake = wake;
 
-        while (ready.IsReady == false)
+        while (bootstrap.Phase != BootstrapPhase.Ready)
             await Task.Delay(250, stoppingToken);
 
         while (stoppingToken.IsCancellationRequested == false)

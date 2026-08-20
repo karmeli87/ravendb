@@ -31,18 +31,4 @@ public class ReadinessPipelineTests(ITestOutputHelper output) : NoDisposalNeeded
 
         Assert.Equal(2, attempts);
     }
-
-    [RavenFact(RavenTestCategory.Quill)]
-    public void ServerReadyFlag_recovers_from_failed_to_ready()
-    {
-        var flag = new ServerReadyFlag();
-
-        flag.MarkFailed("raven not reachable");
-        Assert.False(flag.IsReady);
-        Assert.Equal("raven not reachable", flag.LastError);
-
-        flag.MarkReady();
-        Assert.True(flag.IsReady);
-        Assert.Null(flag.LastError);
-    }
 }

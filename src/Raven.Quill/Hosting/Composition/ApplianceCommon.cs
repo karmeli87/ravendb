@@ -101,8 +101,6 @@ public static class ApplianceCommon
                 {
                     if (int.TryParse(v, out var s) && s > 0) options.AiAssistTimeout = TimeSpan.FromSeconds(s);
                 });
-                ReadEnv("RAVEN_QUILL_READINESS_INITIAL_DELAY_SECONDS", v =>
-                    options.ReadinessInitialDelay = ParsePositiveSeconds("RAVEN_QUILL_READINESS_INITIAL_DELAY_SECONDS", v));
                 ReadEnv("RAVEN_QUILL_READINESS_ATTEMPT_TIMEOUT_SECONDS", v =>
                     options.ReadinessAttemptTimeout = ParsePositiveSeconds("RAVEN_QUILL_READINESS_ATTEMPT_TIMEOUT_SECONDS", v));
                 ReadEnv("RAVEN_QUILL_READINESS_OVERALL_TIMEOUT_SECONDS", v =>

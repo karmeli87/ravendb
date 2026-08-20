@@ -141,6 +141,7 @@ LAST=""
 STARTED=""
 WARNED=""
 TICKS=0
+POLLING=yes
 while true; do
     TICKS=$((TICKS + 1))
 
@@ -148,31 +149,39 @@ while true; do
         watch_services
         if [ -n "$EVENT" ]; then
             LAST=""
+            # a service moved, so the appliance state can have moved with it - ask again
+            POLLING=yes
         fi
     fi
 
-    json="$(curl -fsS --max-time 5 "$STATUS_URL" 2>/dev/null)"
-    if [ -n "$json" ]; then
-        phase="$(printf '%s' "$json" | jq -r '.state // empty')"
-        reason="$(printf '%s' "$json" | jq -r '.reason // empty')"
-        code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$HEALTH_URL" 2>/dev/null)"
+    if [ -n "$POLLING" ]; then
+        json="$(curl -fsS --max-time 5 "$STATUS_URL" 2>/dev/null)"
+        if [ -n "$json" ]; then
+            phase="$(printf '%s' "$json" | jq -r '.state // empty')"
+            reason="$(printf '%s' "$json" | jq -r '.reason // empty')"
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$HEALTH_URL" 2>/dev/null)"
 
-        if [ -n "$phase" ]; then
-            if [ -n "$reason" ]; then
-                now="failed:$reason"
-            elif [ "$code" = "200" ]; then
-                now=ready
-                STARTED=yes
-            elif [ "$phase" = "Ready" ]; then
-                now=degraded
-                STARTED=yes
-            else
-                now=""
-            fi
+            if [ -n "$phase" ]; then
+                if [ -n "$reason" ]; then
+                    now="failed:$reason"
+                elif [ "$code" = "200" ]; then
+                    now=ready
+                    STARTED=yes
+                    # READY ends the startup story: liveness from here is the Docker HEALTHCHECK,
+                    # and watch_services keeps running - it reads the supervisor, not the API, and
+                    # re-arms this on the next service event.
+                    POLLING=""
+                elif [ "$phase" = "Ready" ]; then
+                    now=degraded
+                    STARTED=yes
+                else
+                    now=""
+                fi
 
-            if [ -n "$now" ] && [ "$now" != "$LAST" ]; then
-                LAST="$now"
-                report "$now"
+                if [ -n "$now" ] && [ "$now" != "$LAST" ]; then
+                    LAST="$now"
+                    report "$now"
+                fi
             fi
         fi
     fi

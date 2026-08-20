@@ -16,7 +16,7 @@ public class ReadinessGateTests(ITestOutputHelper output) : QuillTestBase(output
 
         // host starts Ready (MarkReady at build time); override to force the 503 gate path
         const string secretishError = "redis://internal-prod-host:6379/sensitive-path";
-        host.Services.GetRequiredService<IServerReady>().MarkFailed(secretishError);
+        host.Services.GetRequiredService<IBootstrapState>().MarkRestarting(secretishError);
 
         var resp = await host.Client.GetAsync(QuillRoutes.Apps);
 

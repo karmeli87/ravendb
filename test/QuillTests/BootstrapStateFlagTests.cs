@@ -37,6 +37,20 @@ public class BootstrapStateFlagTests(ITestOutputHelper output) : RavenTestBase(o
     }
 
     [RavenFact(RavenTestCategory.Quill)]
+    public void Recovers_from_unreachable_to_ready()
+    {
+        var flag = new BootstrapStateFlag(BootstrapPhase.Restarting);
+
+        flag.MarkRestarting("raven not reachable");
+        Assert.NotEqual(BootstrapPhase.Ready, flag.Phase);
+        Assert.Equal("raven not reachable", flag.Reason);
+
+        flag.MarkReady();
+        Assert.Equal(BootstrapPhase.Ready, flag.Phase);
+        Assert.Null(flag.Reason);
+    }
+
+    [RavenFact(RavenTestCategory.Quill)]
     public void MarkFailed_keeps_the_reason_and_falls_back_to_NeedsActivation()
     {
         IBootstrapState state = new BootstrapStateFlag(BootstrapPhase.Redeeming);

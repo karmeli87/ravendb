@@ -31,7 +31,6 @@ public static class ServingPhase
             RavenStoreFactory.Create(sp.GetRequiredService<IOptions<ApplianceOptions>>().Value));
 
         builder.Services.AddSingleton<IBootstrapState>(_ => new BootstrapStateFlag(BootstrapPhase.Restarting));
-        builder.Services.AddSingleton<IServerReady, ServerReadyFlag>();
         builder.Services.AddSingleton<IAgentRouter, AgentRouter>();
         builder.Services.AddSingleton<WebhookActionExecutor>();
         builder.Services.AddSingleton<IApiKeyStore, ApiKeyStore>();

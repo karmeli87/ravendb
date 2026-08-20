@@ -16,12 +16,12 @@ public static class ReadinessGateMiddleware
 
             if (gated)
             {
-                var ready = context.RequestServices.GetRequiredService<IServerReady>();
-                if (!ready.IsReady)
+                var bootstrap = context.RequestServices.GetRequiredService<IBootstrapState>();
+                if (bootstrap.Phase != BootstrapPhase.Ready)
                 {
                     context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
                     context.Response.Headers.RetryAfter = "5";
-                    // static body only: ready.LastError could leak internals to an unauth probe
+                    // static body only: bootstrap.Reason can carry internals, and this probe is unauth
                     await context.Response.WriteAsJsonAsync(new
                     {
                         error = "appliance is not ready yet; poll /api/bootstrap/status",

@@ -13,12 +13,16 @@ namespace Raven.Quill.Hosting;
 public sealed class RavenReadinessService(
     IDocumentStore store,
     IOptions<ApplianceOptions> options,
-    IServerReady ready,
     IBootstrapState bootstrap,
     ResiliencePipelineProvider<string> pipelines,
     ILogger<RavenReadinessService> logger) : BackgroundService
 {
     public const string PipelineName = "raven-startup";
+
+    // Breathing room between failed rounds. Not configurable: a round already spends
+    // ReadinessOverallTimeout retrying, and this only keeps a failure outside the pipeline - creating the
+    // config database - from spinning the loop.
+    private static readonly TimeSpan RetryAfterFailedRound = TimeSpan.FromSeconds(5);
 
     // Polly runs strategies in add-order (first = outermost): overall timeout wraps the retry, attempt timeout cuts each probe
     public static void ConfigureProbePipeline(ResiliencePipelineBuilder builder, ApplianceOptions opts)
@@ -44,15 +48,8 @@ public sealed class RavenReadinessService(
 
         try
         {
-            // grace period: RavenDB needs ~10-15s; earlier probes just spam errors
-            if (opts.ReadinessInitialDelay > TimeSpan.Zero)
-            {
-                logger.LogInformation(
-                    "Waiting {Delay} for RavenDB to start before probing readiness...",
-                    opts.ReadinessInitialDelay);
-                await Task.Delay(opts.ReadinessInitialDelay, stoppingToken);
-            }
-
+            // No grace period before the first probe: the pipeline retries with backoff and only the outer
+            // catch logs, so probing immediately costs nothing and reaches READY as soon as RavenDB answers.
             while (stoppingToken.IsCancellationRequested == false)
             {
                 try
@@ -67,8 +64,6 @@ public sealed class RavenReadinessService(
                         "RavenDB ready at {Url}; config database {Database} {Action}.",
                         store.Urls[0], opts.ConfigDatabase, r.Created ? "created" : "already present");
 
-                    ready.MarkReady();
-
                     bootstrap.MarkReady();
 
                     return;
@@ -77,12 +72,11 @@ public sealed class RavenReadinessService(
                 {
                     logger.LogError(ex,
                         "RavenDB readiness probe failed after {Timeout}; retrying in {Delay}.",
-                        opts.ReadinessOverallTimeout, opts.ReadinessInitialDelay);
-                    ready.MarkFailed(ex.Message);
+                        opts.ReadinessOverallTimeout, RetryAfterFailedRound);
 
                     bootstrap.MarkRestarting("ravendb is not reachable: " + ex.Message);
 
-                    await Task.Delay(opts.ReadinessInitialDelay, stoppingToken);
+                    await Task.Delay(RetryAfterFailedRound, stoppingToken);
                 }
             }
         }
@@ -96,7 +90,6 @@ public sealed class RavenReadinessService(
         if (bootstrap.Phase != BootstrapPhase.Restarting)
             bootstrap.MarkFailed("shutting down");
 
-        ready.MarkFailed("shutting down");
         await base.StopAsync(cancellationToken);
     }
 }
