@@ -69,7 +69,6 @@ builder.Logging.AddFilter("Polly", LogLevel.None);
 builder.Services.AddOptions<ApplianceOptions>()
     .Configure(options =>
     {
-        ReadEnv("RAVEN_QUILL_RAVEN_URL", v => options.RavenUrl = v);
         ReadEnv("RAVEN_QUILL_WEB_LISTEN_URL", v => options.WebListenUrl = v);
         ReadEnv("RAVEN_QUILL_CONFIG_DB", v => options.ConfigDatabase = v);
         ReadEnv("RAVEN_QUILL_SETUP_PACKAGE_PATH", v => options.SetupPackagePath = v);
@@ -109,6 +108,12 @@ builder.Services.AddOptions<ApplianceOptions>()
 
 builder.Services.AddSingleton<IDocumentStore>(sp =>
     RavenStoreFactory.Create(sp.GetRequiredService<IOptions<ApplianceOptions>>().Value));
+
+// Anything resolved before activation has unpacked the setup package must take this rather than
+// IDocumentStore - see RavenStoreFactory.Create. PublicationOnly so a premature .Value does not
+// cache the failure for the life of the host; the instance itself comes from the DI singleton.
+builder.Services.AddSingleton(sp => new Lazy<IDocumentStore>(
+    sp.GetRequiredService<IDocumentStore>, LazyThreadSafetyMode.PublicationOnly));
 
 builder.Services.AddSingleton<IServerReady, ServerReadyFlag>();
 builder.Services.AddSingleton<IBootstrapState, BootstrapStateFlag>();

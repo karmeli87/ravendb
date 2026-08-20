@@ -106,7 +106,6 @@ EOF
 
 COPY --from=ravendb   /usr/lib/ravendb/server /app/ravendb
 COPY --from=web-build /publish/web            /app/web
-COPY docker/quill/ravendb-settings.json /app/ravendb/settings.json
 COPY docker/quill/nginx.conf /etc/nginx/nginx.conf
 
 COPY docker/quill/s6-rc.d/ /etc/s6-overlay/s6-rc.d/
@@ -129,7 +128,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=180s \
 
 # S6_VERBOSITY=0 keeps the supervisor's lifecycle chatter off stdout
 ENV S6_VERBOSITY=0 \
-    RAVEN_QUILL_RAVEN_URL=http://127.0.0.1:8080 \
     RAVEN_QUILL_WEB_LISTEN_URL=http://0.0.0.0:5000 \
     RAVEN_QUILL_CONFIG_DB=quill-config \
     RAVEN_QUILL_SETUP_PACKAGE_PATH=/var/lib/quill/setup \

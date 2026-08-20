@@ -27,7 +27,7 @@ public sealed class UnknownAgentException(string agentId)
 }
 
 internal sealed class AgentRouter(
-    IDocumentStore store, WebhookActionExecutor actionExecutor, ILogger<AgentRouter> logger) : IAgentRouter
+    Lazy<IDocumentStore> store, WebhookActionExecutor actionExecutor, ILogger<AgentRouter> logger) : IAgentRouter
 {
     public async Task<AgentRunResult> RunAsync(AgentRequest request, Func<string, ValueTask> onChunk, AiAgentConfiguration config, CancellationToken ct)
     {
@@ -40,7 +40,7 @@ internal sealed class AgentRouter(
         foreach (var (key, value) in request.Parameters)
             creationOptions.AddParameter(key, value);
 
-        var conversation = store.AI.ForDatabase(request.Database).Conversation(
+        var conversation = store.Value.AI.ForDatabase(request.Database).Conversation(
             agentId: config.Identifier,
             conversationId: conversationId,
             creationOptions: creationOptions);
@@ -56,7 +56,7 @@ internal sealed class AgentRouter(
             async chunk => await onChunk(chunk),
             ct);
 
-        using var session = store.OpenAsyncSession(request.Database);
+        using var session = store.Value.OpenAsyncSession(request.Database);
         var lazyBindings = session.Advanced.Lazily.LoadAsync<AgentActionBindings>(AgentActionBindings.IdFor(config.Identifier), ct);
 
         while (result.Status == AiConversationResult.ActionRequired)
@@ -72,7 +72,7 @@ internal sealed class AgentRouter(
 
         var reply = AgentOutputShape.ExtractReplyText(result.Answer, replyField);
 
-        await UpsertPreviewAsync(store, request, config.Identifier, conversation.Id, reply, DateTime.UtcNow, ct);
+        await UpsertPreviewAsync(store.Value, request, config.Identifier, conversation.Id, reply, DateTime.UtcNow, ct);
 
         return new AgentRunResult(new { reply }, conversation.Id);
     }

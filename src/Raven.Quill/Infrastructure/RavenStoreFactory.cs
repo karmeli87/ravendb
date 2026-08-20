@@ -12,20 +12,18 @@ public static class RavenStoreFactory
 {
     public static IDocumentStore Create(ApplianceOptions options)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(options.RavenUrl, nameof(ApplianceOptions.RavenUrl));
         ArgumentException.ThrowIfNullOrWhiteSpace(options.ConfigDatabase, nameof(ApplianceOptions.ConfigDatabase));
 
         if (TryCreateSecureStore(options, out var secureStore))
             return secureStore;
 
-        var store = new DocumentStore
-        {
-            Urls = [options.RavenUrl],
-            Database = options.ConfigDatabase,
-            Conventions = { FindCollectionName = QuillConventions.FindCollectionName },
-        };
-        store.Initialize();
-        return store;
+        // RavenDB does not run before activation unpacks the package (docker/quill/s6-rc.d/01-ravendb/run
+        // waits for it), so there is no store to hand out and no URL to guess. Consumers that exist in the
+        // pre-activation host must inject Lazy<IDocumentStore> and touch .Value only once the appliance is
+        // activated; injecting IDocumentStore there lands here and fails the request.
+        throw new InvalidOperationException(
+            $"No setup package at '{options.SetupPackagePath}': the appliance is not activated yet, so there is " +
+            "no RavenDB to connect to.");
     }
 
     public static IDocumentStore Create(IOptions<ApplianceOptions> options) =>

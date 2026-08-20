@@ -12,7 +12,7 @@ public interface IApiKeyStore
 }
 
 public sealed class ApiKeyStore(
-    IDocumentStore store,
+    Lazy<IDocumentStore> store,
     IOptions<ApplianceOptions> options,
     ILogger<ApiKeyStore> logger) : IApiKeyStore
 {
@@ -93,7 +93,7 @@ public sealed class ApiKeyStore(
     {
         try
         {
-            using var session = store.OpenAsyncSession();
+            using var session = store.Value.OpenAsyncSession();
             var doc = new ApiKey
             {
                 Label = "primary (QUILL_API_KEY)",

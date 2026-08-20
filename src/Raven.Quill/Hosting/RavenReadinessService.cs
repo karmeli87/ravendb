@@ -11,7 +11,7 @@ using Raven.Quill.Infrastructure;
 namespace Raven.Quill.Hosting;
 
 public sealed class RavenReadinessService(
-    IDocumentStore store,
+    Lazy<IDocumentStore> store,
     IOptions<ApplianceOptions> options,
     IServerReady ready,
     IBootstrapState bootstrap,
@@ -44,6 +44,18 @@ public sealed class RavenReadinessService(
 
         try
         {
+            // RavenDB only starts once activation has unpacked the package (01-ravendb/run waits for it),
+            // so probing before that would report a failure for a healthy startup.
+            if (File.Exists(GetSetupSettingsPath(opts)) == false)
+            {
+                logger.LogInformation(
+                    "No setup package at {Path} yet; deferring the RavenDB probe until activation unpacks it.",
+                    opts.SetupPackagePath);
+
+                while (File.Exists(GetSetupSettingsPath(opts)) == false)
+                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+            }
+
             // grace period: RavenDB needs ~10-15s; earlier probes just spam errors
             if (opts.ReadinessInitialDelay > TimeSpan.Zero)
             {
@@ -59,13 +71,13 @@ public sealed class RavenReadinessService(
                 {
                     await pipeline.ExecuteAsync(async ct =>
                     {
-                        await store.Maintenance.Server.SendAsync(new GetBuildNumberOperation(), ct);
+                        await store.Value.Maintenance.Server.SendAsync(new GetBuildNumberOperation(), ct);
                     }, stoppingToken);
 
-                    var r = await RavenStoreFactory.EnsureDatabaseAsync(store, opts.ConfigDatabase, DatabaseLockMode.PreventDeletesError, stoppingToken);
+                    var r = await RavenStoreFactory.EnsureDatabaseAsync(store.Value, opts.ConfigDatabase, DatabaseLockMode.PreventDeletesError, stoppingToken);
                     logger.LogInformation(
                         "RavenDB ready at {Url}; config database {Database} {Action}.",
-                        opts.RavenUrl, opts.ConfigDatabase, r.Created ? "created" : "already present");
+                        store.Value.Urls[0], opts.ConfigDatabase, r.Created ? "created" : "already present");
 
                     ready.MarkReady();
 
@@ -92,10 +104,7 @@ public sealed class RavenReadinessService(
                         opts.ReadinessOverallTimeout, opts.ReadinessInitialDelay);
                     ready.MarkFailed(ex.Message);
 
-                    if (File.Exists(GetSetupSettingsPath(opts)))
-                        bootstrap.MarkRestarting("ravendb is not reachable: " + ex.Message);
-                    else
-                        bootstrap.MarkFailed("ravendb is not reachable: " + ex.Message);
+                    bootstrap.MarkRestarting("ravendb is not reachable: " + ex.Message);
 
                     await Task.Delay(opts.ReadinessInitialDelay, stoppingToken);
                 }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Options;
@@ -57,9 +56,11 @@ public sealed class ApplianceActivationService(
 
             WriteAdminThumbprint(opts);
 
+            // A RavenDbS6Service value means we run under s6, where stopping this host restarts
+            // it. Only its presence matters now - 01-ravendb/run picks the package up itself.
             if (string.IsNullOrEmpty(opts.RavenDbS6Service) == false)
             {
-                RestartIntoSecureMode(opts);
+                RestartIntoSecureMode();
                 return;
             }
 
@@ -106,23 +107,13 @@ public sealed class ApplianceActivationService(
         File.WriteAllText(Path.Combine(opts.SetupPackagePath, "admin-thumbprint"), cert.Thumbprint);
     }
 
-    private void RestartIntoSecureMode(ApplianceOptions opts)
+    private void RestartIntoSecureMode()
     {
         bootstrap.TryMarkRestarting();
 
-        try
-        {
-            using var s6 = Process.Start(new ProcessStartInfo("s6-svc", "-r " + opts.RavenDbS6Service)
-            {
-                UseShellExecute = false,
-            });
-            s6?.WaitForExit(5000);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Could not signal s6 to restart RavenDB ({Service}); an s6 supervisor must restart the host.", opts.RavenDbS6Service);
-        }
-
+        // No "s6-svc -r 01-ravendb" here: that service waits for the package and starts RavenDB on
+        // its own, so signalling a restart would only churn its pid - which 05-console reports as
+        // a crash. Stopping this host is enough; s6 respawns it against the now-secure store.
         logger.LogInformation("Activation complete; restarting .NET host to bind the secure IDocumentStore.");
         lifetime.StopApplication();
     }

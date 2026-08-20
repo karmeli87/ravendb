@@ -23,7 +23,7 @@ internal interface ITelegramChannelManager
 }
 
 internal sealed class TelegramChannelManager(
-    IDocumentStore store,
+    Lazy<IDocumentStore> store,
     ITelegramBotClientFactory botFactory,
     IAgentRouter router,
     IOptions<ApplianceOptions> options,
@@ -76,7 +76,7 @@ internal sealed class TelegramChannelManager(
         List<App> apps;
         try
         {
-            using var session = store.OpenAsyncSession();
+            using var session = store.Value.OpenAsyncSession();
             apps = await session.LoadAllStartingWithAsync<App>(AppLookup.IdPrefix, ct);
         }
         catch (Exception e) when (e is not OperationCanceledException)
@@ -91,7 +91,7 @@ internal sealed class TelegramChannelManager(
 
             try
             {
-                using var session = store.OpenAsyncSession(app.Database);
+                using var session = store.Value.OpenAsyncSession(app.Database);
                 var channels = await session.LoadAllStartingWithAsync<Channel>(Channel.IdPrefix, ct);
 
                 foreach (var channel in channels)
@@ -149,7 +149,7 @@ internal sealed class TelegramChannelManager(
             try
             {
                 _bots[key] = TelegramBotRuntime.Start(
-                    key.Database, entry.Channel, entry.ChangeVector, botFactory, store, router, options.Value, logger);
+                    key.Database, entry.Channel, entry.ChangeVector, botFactory, store.Value, router, options.Value, logger);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
