@@ -4,7 +4,6 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Raven.Client.Documents.Operations.AI.Agents;
 using Raven.Quill.Embed;
-using Raven.Quill.Endpoints;
 using Raven.Quill.Telegram;
 
 namespace Raven.Quill.Hosting.Composition;
@@ -71,14 +70,6 @@ public static class ApplianceCommon
             options.KnownProxies.Add(System.Net.IPAddress.Loopback);
             options.KnownProxies.Add(System.Net.IPAddress.IPv6Loopback);
         });
-    }
-
-    /// The FE's boot screen needs exactly these: the bundle, the phase to poll, and a liveness answer.
-    public static void MapEndpoints(WebApplication app)
-    {
-        StaticAssetEndpoints.Map(app);
-        HealthEndpoints.Map(app);
-        BootstrapEndpoints.Map(app);
     }
 
     private static void AddApplianceOptions(WebApplicationBuilder builder)

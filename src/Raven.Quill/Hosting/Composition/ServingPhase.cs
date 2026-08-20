@@ -61,32 +61,6 @@ public static class ServingPhase
         AddAuth(builder);
     }
 
-    public static void Map(WebApplication app)
-    {
-        app.UseWebSockets();
-
-        app.UseReadinessGate();
-        app.UseRateLimiter();
-        app.UseAuthentication();
-        app.UseAuthorization();
-
-        AuthEndpoints.Map(app);
-        AppsEndpoints.Map(app);
-        ChannelsEndpoints.Map(app);
-        IFrameCustomizationEndpoints.Map(app);
-        EmbedLinksEndpoints.Map(app);
-        AiConnectionStringsEndpoints.Map(app);
-        AiModelsEndpoints.Map(app);
-        AgentsEndpoints.Map(app);
-        StatsEndpoints.Map(app);
-        SettingsEndpoints.Map(app);
-        WizardEndpoints.Map(app);
-        ChatEndpoints.Map(app);
-        AssistantEndpoints.Map(app);
-        // map before MapSpaFallback or /apps/{slug}/embed/* is swallowed as index.html
-        EmbedEndpoints.Map(app);
-    }
-
     private static void AddHttpClients(WebApplicationBuilder builder)
     {
         builder.Services.ConfigureHttpClientDefaults(httpBuilder =>

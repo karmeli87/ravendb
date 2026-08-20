@@ -26,10 +26,15 @@ var phase = isOpenApiDocumentGeneration || SetupPackage.IsPresent(setupRoot)
 
 ApplianceCommon.AddServices(builder);
 
-if (phase == AppliancePhase.Activating)
-    ActivatingPhase.AddServices(builder);
-else
-    ServingPhase.AddServices(builder, isOpenApiDocumentGeneration);
+switch (phase)
+{
+    case AppliancePhase.Activating:
+        ActivatingPhase.AddServices(builder);
+        break;
+    case AppliancePhase.Serving:
+        ServingPhase.AddServices(builder, isOpenApiDocumentGeneration);
+        break;
+}
 
 var app = builder.Build();
 
@@ -38,10 +43,36 @@ if (app.Environment.IsDevelopment())
 
 app.UseForwardedHeaders();
 
-ApplianceCommon.MapEndpoints(app);
+if (phase == AppliancePhase.Serving)
+{
+    app.UseWebSockets();
+    app.UseReadinessGate();
+    app.UseRateLimiter();
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
+
+StaticAssetEndpoints.Map(app);
+HealthEndpoints.Map(app);
+BootstrapEndpoints.Map(app);
 
 if (phase == AppliancePhase.Serving)
-    ServingPhase.Map(app);
+{
+    AuthEndpoints.Map(app);
+    AppsEndpoints.Map(app);
+    ChannelsEndpoints.Map(app);
+    IFrameCustomizationEndpoints.Map(app);
+    EmbedLinksEndpoints.Map(app);
+    AiConnectionStringsEndpoints.Map(app);
+    AiModelsEndpoints.Map(app);
+    AgentsEndpoints.Map(app);
+    StatsEndpoints.Map(app);
+    SettingsEndpoints.Map(app);
+    WizardEndpoints.Map(app);
+    ChatEndpoints.Map(app);
+    AssistantEndpoints.Map(app);
+    EmbedEndpoints.Map(app);
+}
 
 // last, or /apps/{slug}/embed/* is swallowed as index.html
 StaticAssetEndpoints.MapSpaFallback(app);
