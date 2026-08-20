@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using System.Net;
 using FastTests;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -5,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Raven.Client.Documents;
+using QuillTests.E2E.Fixtures;
 using Raven.Quill.Hosting;
 using Tests.Infrastructure;
 using Xunit;
@@ -37,17 +39,18 @@ public class HealthEndpointsTests(ITestOutputHelper output) : RavenTestBase(outp
 
     public sealed class Factory(IDocumentStore store) : WebApplicationFactory<Program>
     {
-        public IBootstrapState Bootstrap { get; } = new BootstrapStateFlag(
-            Microsoft.Extensions.Options.Options.Create(new ApplianceOptions
-            {
-                SetupPackagePath = Path.Combine(
-                    Path.GetTempPath(),
-                    nameof(HealthEndpointsTests),
-                    Guid.NewGuid().ToString("N"))
-            }));
+        // /healthz reports RavenDB's reachability only in the serving phase, so the host needs a package
+        private readonly string _setupPackagePath = Path.Combine(
+            Path.GetTempPath(), nameof(HealthEndpointsTests), Guid.NewGuid().ToString("N"));
+
+        public IBootstrapState Bootstrap { get; } = new BootstrapStateFlag(BootstrapPhase.Restarting);
 
         protected override IHost CreateHost(IHostBuilder builder)
         {
+            SetupPackageStub.Write(_setupPackagePath);
+            builder.ConfigureHostConfiguration(config => config.AddInMemoryCollection(
+                new Dictionary<string, string?> { ["RAVEN_QUILL_SETUP_PACKAGE_PATH"] = _setupPackagePath }));
+
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IBootstrapState>();

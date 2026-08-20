@@ -5,7 +5,7 @@ using Raven.Quill.Hosting;
 
 namespace Raven.Quill.Infrastructure;
 
-internal sealed class RavenHealthCheck(IBootstrapState bootstrap, Lazy<IDocumentStore> store) : IHealthCheck
+internal sealed class RavenHealthCheck(IBootstrapState bootstrap, IDocumentStore store) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
@@ -21,7 +21,7 @@ internal sealed class RavenHealthCheck(IBootstrapState bootstrap, Lazy<IDocument
 
         try
         {
-            await store.Value.Maintenance.Server.SendAsync(new GetBuildNumberOperation(), cancellationToken);
+            await store.Maintenance.Server.SendAsync(new GetBuildNumberOperation(), cancellationToken);
 
             return HealthCheckResult.Healthy();
         }

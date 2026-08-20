@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Options;
-
 namespace Raven.Quill.Hosting;
 
 public enum BootstrapPhase
@@ -18,12 +16,7 @@ public interface IBootstrapState
     BootstrapPhase Phase { get; }
     string? Reason { get; }
 
-    bool StartedWithSetupPackage { get; }
-
-    bool TryMarkRedeeming();
-
-    bool TryMarkRestarting();
-
+    void MarkRedeeming();
     void MarkRestarting(string? reason = null);
     void MarkReady();
     void MarkFailed(string reason);
@@ -41,48 +34,27 @@ public static class BootstrapPhaseExtensions
     };
 }
 
+/// The phase the FE's boot screen polls. Its starting value is decided by the composition root - the
+/// activating graph starts at NeedsActivation, the serving graph at Restarting until RavenDB answers -
+/// so nothing here has to guess which lifecycle phase it is in, and activation cannot run twice: it is
+/// only composed in one phase, and that phase ends by stopping the host.
 public sealed class BootstrapStateFlag : IBootstrapState
 {
     private int _phase;
     private string? _reason;
-    private readonly bool _startedWithSetupPackage;
 
-    public BootstrapStateFlag(IOptions<ApplianceOptions> options)
+    public BootstrapStateFlag(BootstrapPhase initial)
     {
-        var setupSettings = Path.Combine(options.Value.SetupPackagePath, "A", "settings.json");
-        _startedWithSetupPackage = File.Exists(setupSettings);
-        _phase = _startedWithSetupPackage
-            ? (int)BootstrapPhase.Restarting
-            : (int)BootstrapPhase.NeedsActivation;
+        _phase = (int)initial;
     }
 
     public BootstrapPhase Phase => (BootstrapPhase)Volatile.Read(ref _phase);
     public string? Reason => Volatile.Read(ref _reason);
-    public bool StartedWithSetupPackage => _startedWithSetupPackage;
 
-    // CAS: only the winner extracts the setup package, exactly once
-    public bool TryMarkRedeeming()
+    public void MarkRedeeming()
     {
-        var previous = Interlocked.CompareExchange(
-            ref _phase,
-            (int)BootstrapPhase.Redeeming,
-            (int)BootstrapPhase.NeedsActivation);
-
-        if (previous != (int)BootstrapPhase.NeedsActivation)
-            return false;
-
         Volatile.Write(ref _reason, null);
-        return true;
-    }
-
-    public bool TryMarkRestarting()
-    {
-        var previous = Interlocked.CompareExchange(
-            ref _phase,
-            (int)BootstrapPhase.Restarting,
-            (int)BootstrapPhase.Redeeming);
-
-        return previous == (int)BootstrapPhase.Redeeming;
+        Volatile.Write(ref _phase, (int)BootstrapPhase.Redeeming);
     }
 
     public void MarkRestarting(string? reason = null)

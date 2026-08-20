@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Raven.Client.Documents.Operations.CdcSink.Test;
 using Raven.Quill.AiHelper;
+using Raven.Quill.Hosting;
 using Raven.Server.SqlMigration;
 using SlowTests.Server.Documents.CdcSink;
 using Tests.Infrastructure;
@@ -44,15 +45,34 @@ public class ApplianceFullFlowTests(ITestOutputHelper output) : CdcSinkIntegrati
         var setupRoot = NewDataPath(forceCreateDir: true, prefix: "egor-ai-setup");
 
         var store = GetDocumentStore();
+
+        void WithFakeLicenseClient(IServiceCollection services)
+        {
+            services.RemoveAll<ILicenseClient>();
+            services.AddSingleton<ILicenseClient>(new FakeLicenseClient(HardcodedLicenseKey, zipBytes));
+        }
+
+        // Phase 1 — activating. No package on disk, so the host composes activation and nothing else: it
+        // fetches the package, unpacks it, and stops itself. In the container that stop is the phase
+        // transition; here the second factory below plays the part of the supervisor's next process.
+        using (var activating = new ApplianceWebApplicationFactory(
+                   setupPackagePath: setupRoot,
+                   applianceStore: store,
+                   configureOptions: opts => opts.LicenseKey = HardcodedLicenseKey,
+                   configureServices: WithFakeLicenseClient,
+                   activated: false))
+        {
+            _ = activating.CreateClient();   // starting the host starts activation
+
+            await WaitForSetupPackageAsync(setupRoot, timeoutMs: 60_000);
+        }
+
+        // Phase 2 — serving, against the package activation just unpacked.
         using var factory = new ApplianceWebApplicationFactory(
             setupPackagePath: setupRoot,
             applianceStore: store,
             configureOptions: opts => opts.LicenseKey = HardcodedLicenseKey,
-            configureServices: services =>
-            {
-                services.RemoveAll<ILicenseClient>();
-                services.AddSingleton<ILicenseClient>(new FakeLicenseClient(HardcodedLicenseKey, zipBytes));
-            });
+            configureServices: WithFakeLicenseClient);
         var client = factory.CreateClient();
 
         await WaitForBootstrapStateAsync(client, expected: "Ready", timeoutMs: 60_000);
@@ -331,6 +351,22 @@ public class ApplianceFullFlowTests(ITestOutputHelper output) : CdcSinkIntegrati
             await Task.Delay(250);
         }
         return count;
+    }
+
+    /// The sentinel activation writes last. Waiting on it, rather than on a transient bootstrap phase,
+    /// keeps this deterministic: the activating host stops itself the moment it is done.
+    private static async Task WaitForSetupPackageAsync(string setupRoot, int timeoutMs)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeoutMs)
+        {
+            if (SetupPackage.IsPresent(setupRoot))
+                return;
+
+            await Task.Delay(250);
+        }
+
+        throw new TimeoutException($"activation did not unpack a setup package into '{setupRoot}' within {timeoutMs}ms.");
     }
 
     private static async Task WaitForBootstrapStateAsync(HttpClient client, string expected, int timeoutMs)

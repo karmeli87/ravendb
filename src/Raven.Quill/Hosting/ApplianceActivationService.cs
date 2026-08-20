@@ -23,13 +23,7 @@ public sealed class ApplianceActivationService(
             return;
         }
 
-        if (bootstrap.TryMarkRedeeming() == false)
-        {
-            logger.LogInformation(
-                "Setup package already applied (bootstrap phase {Phase}); skipping startup activation.",
-                bootstrap.Phase);
-            return;
-        }
+        bootstrap.MarkRedeeming();
 
         var tempZipPath = Path.Combine(Path.GetTempPath(), $"setup-package-{Guid.NewGuid():N}.zip");
         try
@@ -54,17 +48,15 @@ public sealed class ApplianceActivationService(
 
             logger.LogInformation("Setup package activated and unpacked to {Path}.", opts.SetupPackagePath);
 
-            WriteAdminThumbprint(opts);
-
-            // A RavenDbS6Service value means we run under s6, where stopping this host restarts
-            // it. Only its presence matters now - 01-ravendb/run picks the package up itself.
-            if (string.IsNullOrEmpty(opts.RavenDbS6Service) == false)
+            if (WriteAdminThumbprint(opts) == false)
             {
-                RestartIntoSecureMode();
+                // No sentinel means the next process would derive Activating again and re-download, so stop
+                // here with a reason the console and the FE boot screen can show.
+                bootstrap.MarkFailed("activation failed: the setup package has no admin client certificate");
                 return;
             }
 
-            bootstrap.MarkReady();
+            HandOffToServingPhase();
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
@@ -87,7 +79,7 @@ public sealed class ApplianceActivationService(
         }
     }
 
-    private void WriteAdminThumbprint(ApplianceOptions opts)
+    private bool WriteAdminThumbprint(ApplianceOptions opts)
     {
         var adminPfx = Directory
             .GetFiles(opts.SetupPackagePath, "admin.client.certificate.*.pfx")
@@ -95,26 +87,31 @@ public sealed class ApplianceActivationService(
             .FirstOrDefault();
         if (adminPfx is null)
         {
+            // The thumbprint file is also the package-complete sentinel, so without it neither RavenDB nor
+            // the serving phase ever starts - the appliance stays in the activating phase and retries
+            // activation on the next start, which is the right outcome for a package this broken.
             logger.LogWarning(
                 "No admin client certificate (admin.client.certificate.*.pfx) found under {Path}; " +
-                "skipping the admin-thumbprint marker — RavenDB will not trust the admin cert and the " +
-                "secure store may fail to authenticate (appliance can hang in Restarting).",
+                "the setup package is incomplete, so the appliance stays in the activating phase.",
                 opts.SetupPackagePath);
-            return;
+            return false;
         }
 
         using var cert = X509CertificateLoader.LoadPkcs12FromFile(adminPfx, password: "");
-        File.WriteAllText(Path.Combine(opts.SetupPackagePath, "admin-thumbprint"), cert.Thumbprint);
+        // written last: this is the marker 01-ravendb/run and the phase decision key off
+        File.WriteAllText(SetupPackage.SentinelPath(opts.SetupPackagePath), cert.Thumbprint);
+        return true;
     }
 
-    private void RestartIntoSecureMode()
+    // The package is on disk, so this process has done its job: stopping the host is the phase
+    // transition. The supervisor starts a new one, which derives Serving and composes the store, auth
+    // and the API. No "s6-svc -r 01-ravendb" either - that service waits for the package and starts
+    // RavenDB itself, so signalling it would only churn its pid, which 05-console reports as a crash.
+    private void HandOffToServingPhase()
     {
-        bootstrap.TryMarkRestarting();
+        bootstrap.MarkRestarting();
 
-        // No "s6-svc -r 01-ravendb" here: that service waits for the package and starts RavenDB on
-        // its own, so signalling a restart would only churn its pid - which 05-console reports as
-        // a crash. Stopping this host is enough; s6 respawns it against the now-secure store.
-        logger.LogInformation("Activation complete; restarting .NET host to bind the secure IDocumentStore.");
+        logger.LogInformation("Activation complete; stopping the host so it restarts into the serving phase.");
         lifetime.StopApplication();
     }
 }

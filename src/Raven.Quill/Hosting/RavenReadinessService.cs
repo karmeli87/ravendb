@@ -11,7 +11,7 @@ using Raven.Quill.Infrastructure;
 namespace Raven.Quill.Hosting;
 
 public sealed class RavenReadinessService(
-    Lazy<IDocumentStore> store,
+    IDocumentStore store,
     IOptions<ApplianceOptions> options,
     IServerReady ready,
     IBootstrapState bootstrap,
@@ -44,18 +44,6 @@ public sealed class RavenReadinessService(
 
         try
         {
-            // RavenDB only starts once activation has unpacked the package (01-ravendb/run waits for it),
-            // so probing before that would report a failure for a healthy startup.
-            if (File.Exists(GetSetupSettingsPath(opts)) == false)
-            {
-                logger.LogInformation(
-                    "No setup package at {Path} yet; deferring the RavenDB probe until activation unpacks it.",
-                    opts.SetupPackagePath);
-
-                while (File.Exists(GetSetupSettingsPath(opts)) == false)
-                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-            }
-
             // grace period: RavenDB needs ~10-15s; earlier probes just spam errors
             if (opts.ReadinessInitialDelay > TimeSpan.Zero)
             {
@@ -71,29 +59,17 @@ public sealed class RavenReadinessService(
                 {
                     await pipeline.ExecuteAsync(async ct =>
                     {
-                        await store.Value.Maintenance.Server.SendAsync(new GetBuildNumberOperation(), ct);
+                        await store.Maintenance.Server.SendAsync(new GetBuildNumberOperation(), ct);
                     }, stoppingToken);
 
-                    var r = await RavenStoreFactory.EnsureDatabaseAsync(store.Value, opts.ConfigDatabase, DatabaseLockMode.PreventDeletesError, stoppingToken);
+                    var r = await RavenStoreFactory.EnsureDatabaseAsync(store, opts.ConfigDatabase, DatabaseLockMode.PreventDeletesError, stoppingToken);
                     logger.LogInformation(
                         "RavenDB ready at {Url}; config database {Database} {Action}.",
-                        store.Value.Urls[0], opts.ConfigDatabase, r.Created ? "created" : "already present");
+                        store.Urls[0], opts.ConfigDatabase, r.Created ? "created" : "already present");
 
                     ready.MarkReady();
 
-                    // flip bootstrap Ready only from the post-restart secure start (don't clobber activation)
-                    if (bootstrap.StartedWithSetupPackage)
-                    {
-                        logger.LogInformation("Process started with the setup package present; marking bootstrap Ready.");
-                        bootstrap.MarkReady();
-                    }
-                    else
-                    {
-                        logger.LogInformation(
-                            "RavenDB reachable but the process started without a setup package at {Path}; " +
-                            "bootstrap stays in its current phase until startup activation completes.",
-                            opts.SetupPackagePath);
-                    }
+                    bootstrap.MarkReady();
 
                     return;
                 }
@@ -123,7 +99,4 @@ public sealed class RavenReadinessService(
         ready.MarkFailed("shutting down");
         await base.StopAsync(cancellationToken);
     }
-
-    private static string GetSetupSettingsPath(ApplianceOptions options) =>
-        Path.Combine(options.SetupPackagePath, "A", "settings.json");
 }

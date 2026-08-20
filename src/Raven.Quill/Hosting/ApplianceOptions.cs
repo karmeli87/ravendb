@@ -18,8 +18,6 @@ public sealed class ApplianceOptions
 
     public string? ApiKey { get; set; }
 
-    public string? RavenDbS6Service { get; set; }
-
     [Url]
     public string? AiApiUrl { get; set; }
 

@@ -131,7 +131,6 @@ ENV S6_VERBOSITY=0 \
     RAVEN_QUILL_WEB_LISTEN_URL=http://0.0.0.0:5000 \
     RAVEN_QUILL_CONFIG_DB=quill-config \
     RAVEN_QUILL_SETUP_PACKAGE_PATH=/var/lib/quill/setup \
-    RAVEN_QUILL_RAVENDB_S6_SERVICE=/run/service/01-ravendb \
     RAVEN_QUILL_RAVENDB_INTERNAL_PORT=8443 \
     RAVEN_QUILL_RAVENDB_PROXY_PORT=8447 \
     RAVEN_DataDir=/var/lib/quill/ravendb \

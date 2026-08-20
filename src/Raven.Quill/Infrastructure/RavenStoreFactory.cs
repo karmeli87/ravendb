@@ -10,20 +10,22 @@ namespace Raven.Quill.Infrastructure;
 
 public static class RavenStoreFactory
 {
+    // The appliance has exactly one store, built from the setup package. Only the serving phase composes
+    // it, so "no package" is a broken invariant rather than a state to handle - see Program and
+    // Hosting/Composition. Every failure here is fatal on purpose: the host crashes, s6 restarts it.
     public static IDocumentStore Create(ApplianceOptions options)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(options.ConfigDatabase, nameof(ApplianceOptions.ConfigDatabase));
 
-        if (TryCreateSecureStore(options, out var secureStore))
-            return secureStore;
+        var settingsFile = SetupPackage.SettingsPath(options.SetupPackagePath);
+        if (File.Exists(settingsFile) == false)
+        {
+            throw new InvalidOperationException(
+                $"No setup package at '{options.SetupPackagePath}', so there is no RavenDB to connect to. " +
+                "The serving phase should not have been composed without one.");
+        }
 
-        // RavenDB does not run before activation unpacks the package (docker/quill/s6-rc.d/01-ravendb/run
-        // waits for it), so there is no store to hand out and no URL to guess. Consumers that exist in the
-        // pre-activation host must inject Lazy<IDocumentStore> and touch .Value only once the appliance is
-        // activated; injecting IDocumentStore there lands here and fails the request.
-        throw new InvalidOperationException(
-            $"No setup package at '{options.SetupPackagePath}': the appliance is not activated yet, so there is " +
-            "no RavenDB to connect to.");
+        return CreateSecureStore(options, settingsFile);
     }
 
     public static IDocumentStore Create(IOptions<ApplianceOptions> options) =>
@@ -46,15 +48,8 @@ public static class RavenStoreFactory
         return new DatabaseCreationStatus { Created = true, DatabaseTopologyId = r.Topology.DatabaseTopologyIdBase64 };
     }
 
-    private static bool TryCreateSecureStore(ApplianceOptions options, out IDocumentStore store)
+    private static IDocumentStore CreateSecureStore(ApplianceOptions options, string settingsFile)
     {
-        store = null!;
-
-        var settingsFile = Path.Combine(options.SetupPackagePath, "A", "settings.json");
-        if (!File.Exists(settingsFile))
-            return false;
-
-        // fail loud past this point: a false return would silently break the secured store
         string? publicUrl;
         using (var stream = File.OpenRead(settingsFile))
         using (var doc = JsonDocument.Parse(stream))
@@ -115,7 +110,6 @@ public static class RavenStoreFactory
             Conventions = { DisableTopologyUpdates = true, FindCollectionName = QuillConventions.FindCollectionName },
         };
         secured.Initialize();
-        store = secured;
-        return true;
+        return secured;
     }
 }
